@@ -1,18 +1,14 @@
 <?php
-$host = "localhost"; // Ubah jika perlu
-$username = "root"; // Ubah jika perlu
-$password = ""; // Ubah jika perlu
-$database = "bki"; // Ubah jika perlu
+$host = "localhost";
+$username = "root";
+$password = "";
+$database = "bki";
 
-// Membuat koneksi ke database
 $koneksi = new mysqli($host, $username, $password, $database);
-
-// Memeriksa koneksi
 if ($koneksi->connect_error) {
     die("Koneksi Gagal: " . $koneksi->connect_error);
 }
 
-// Fungsi untuk menambah data ke tabel users
 function tambah_user($data) {
     global $koneksi;
 
@@ -20,7 +16,7 @@ function tambah_user($data) {
     $nama = htmlspecialchars($data['nama']);
     $divisi = htmlspecialchars($data['divisi']);
     $username = htmlspecialchars($data['username']);
-    $password = password_hash(htmlspecialchars($data['password']), PASSWORD_DEFAULT);
+    $password = md5(htmlspecialchars($data['password']));
     $role = htmlspecialchars($data['role']);
     $status = htmlspecialchars($data['status']);
 
@@ -31,7 +27,6 @@ function tambah_user($data) {
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk menambah data ke tabel time
 function tambah_time($data) {
     global $koneksi;
 
@@ -48,49 +43,50 @@ function tambah_time($data) {
     return $stmt->affected_rows;
 }
 
-function tambah_avident($data) {
+function tambah_planning($data) {
     global $koneksi;
 
     $tanggal = $data['tanggal'];
     $user_id = $data['user_id'];
-    $gambar = $data['gambar'];
-    $time_upload_avident = $data['time_upload_avident'];
+    $deskripsi = $data['deskripsi'];
+    $time_upload_activity_planning = $data['time_upload_activity_planning'];
+    $status = $data['status'];
+    $history_update = $data['history_update'];
 
-    $query = "INSERT INTO avident (tanggal, user_id, gambar, time_upload_avident) VALUES (?, ?, ?, ?)";
+    $query = "INSERT INTO planning (tanggal, user_id, deskripsi, time_upload_activity_planning, status, history_update) 
+                VALUES (?, ?, ?, ?, ?, ?)";
     $stmt = $koneksi->prepare($query);
-    $stmt->bind_param('ssss', $tanggal, $user_id, $gambar, $time_upload_avident);
+    
+    if (!$stmt) {
+        die('Prepare failed: ' . $koneksi->error);
+    }
 
-    return $stmt->execute();
+    $stmt->bind_param("sissss", $tanggal, $user_id, $deskripsi, $time_upload_activity_planning, $status, $history_update);
+
+    if ($stmt->execute()) {
+        return $stmt->affected_rows;
+    } else {
+        die('Execute failed: ' . $stmt->error);
+    }
 }
 
-// Fungsi untuk menambah data ke tabel planning
-function tambah_planning($data) {
-    global $koneksi;
-
-    $tanggal = htmlspecialchars($data['tanggal']);
-    $user_id = htmlspecialchars($data['user_id']);
-    $deskripsi = htmlspecialchars($data['deskripsi']);
-    $time_upload_activity_planning = htmlspecialchars($data['time_upload_activity_planning']);
-
-    $stmt = $koneksi->prepare("INSERT INTO planning (tanggal, user_id, deskripsi, time_upload_activity_planning) VALUES (?, ?, ?, ?)");
-    $stmt->bind_param("siss", $tanggal, $user_id, $deskripsi, $time_upload_activity_planning);
-
-    $stmt->execute();
-    return $stmt->affected_rows;
-}
-
-// Fungsi untuk menghapus data dari tabel users
 function hapus_user($id) {
     global $koneksi;
 
+    $stmt = $koneksi->prepare("DELETE FROM time WHERE user_id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
+    $stmt = $koneksi->prepare("DELETE FROM planning WHERE user_id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+
     $stmt = $koneksi->prepare("DELETE FROM users WHERE id = ?");
     $stmt->bind_param("i", $id);
-    
     $stmt->execute();
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk menghapus data dari tabel time
 function hapus_time($id) {
     global $koneksi;
 
@@ -101,18 +97,6 @@ function hapus_time($id) {
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk menghapus data dari tabel avident
-function hapus_avident($id) {
-    global $koneksi;
-
-    $stmt = $koneksi->prepare("DELETE FROM avident WHERE id = ?");
-    $stmt->bind_param("i", $id);
-    
-    $stmt->execute();
-    return $stmt->affected_rows;
-}
-
-// Fungsi untuk menghapus data dari tabel planning
 function hapus_planning($id) {
     global $koneksi;
 
@@ -123,7 +107,6 @@ function hapus_planning($id) {
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk mengupdate data tabel users
 function update_user($data) {
     global $koneksi;
 
@@ -132,7 +115,7 @@ function update_user($data) {
     $nama = htmlspecialchars($data['nama']);
     $divisi = htmlspecialchars($data['divisi']);
     $username = htmlspecialchars($data['username']);
-    $password = password_hash(htmlspecialchars($data['password']), PASSWORD_DEFAULT);
+    $password = md5(htmlspecialchars($data['password']));
     $role = htmlspecialchars($data['role']);
     $status = htmlspecialchars($data['status']);
 
@@ -143,7 +126,6 @@ function update_user($data) {
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk mengupdate data tabel time
 function update_time($data) {
     global $koneksi;
 
@@ -161,50 +143,37 @@ function update_time($data) {
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk mengupdate data tabel avident
-function update_avident($data) {
-    global $koneksi;
-
-    $id = $data['id'];
-    $tanggal = htmlspecialchars($data['tanggal']);
-    $user_id = htmlspecialchars($data['user_id']);
-    $gambar = upload_file();
-    $time_upload_avident = htmlspecialchars($data['time_upload_avident']);
-
-    $stmt = $koneksi->prepare("UPDATE avident SET tanggal=?, user_id=?, gambar=?, time_upload_avident=? WHERE id=?");
-    $stmt->bind_param("sissi", $tanggal, $user_id, $gambar, $time_upload_avident, $id);
-    
-    $stmt->execute();
-    return $stmt->affected_rows;
-}
-
-// Fungsi untuk mengupdate data tabel planning
 function update_planning($data) {
     global $koneksi;
 
     $id = $data['id'];
     $tanggal = htmlspecialchars($data['tanggal']);
     $user_id = htmlspecialchars($data['user_id']);
+    $gambar = $data['gambar'];
+    $time_upload_avident = $data['time_upload_avident'];
     $deskripsi = htmlspecialchars($data['deskripsi']);
-
-    // Fetch the existing time from the database
-    $stmt = $koneksi->prepare("SELECT time_upload_activity_planning FROM planning WHERE id=?");
+    $time_upload_activity_planning = htmlspecialchars($data['time_upload_activity_planning']);
+    $history_update = htmlspecialchars($data['history_update']);
+    $status = htmlspecialchars($data['status']);
+    
+    $stmt = $koneksi->prepare("SELECT time_upload_activity_planning, time_upload_avident FROM planning WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
-    $existing_time = $result->fetch_assoc()['time_upload_activity_planning'];
+    $existing_times = $result->fetch_assoc();
+    $existing_time_upload_activity_planning = $existing_times['time_upload_activity_planning'];
+    $existing_time_upload_avident = $existing_times['time_upload_avident'];
 
-    // Use the existing time if not provided in the form
-    $time_upload_activity_planning = isset($data['time_upload_activity_planning']) ? htmlspecialchars($data['time_upload_activity_planning']) : $existing_time;
+    $time_upload_activity_planning = isset($data['time_upload_activity_planning']) ? htmlspecialchars($data['time_upload_activity_planning']) : $existing_time_upload_activity_planning;
+    $time_upload_avident = isset($data['time_upload_avident']) ? htmlspecialchars($data['time_upload_avident']) : $existing_time_upload_avident;
 
-    $stmt = $koneksi->prepare("UPDATE planning SET tanggal=?, user_id=?, deskripsi=?, time_upload_activity_planning=? WHERE id=?");
-    $stmt->bind_param("sissi", $tanggal, $user_id, $deskripsi, $time_upload_activity_planning, $id);
+    $stmt = $koneksi->prepare("UPDATE planning SET tanggal=?, user_id=?, gambar=?, time_upload_avident=?, deskripsi=?, time_upload_activity_planning=?, history_update=?, status=? WHERE id=?");
+    $stmt->bind_param("sissssssi", $tanggal, $user_id, $gambar, $time_upload_avident, $deskripsi, $time_upload_activity_planning, $history_update, $status, $id);
     
     $stmt->execute();
     return $stmt->affected_rows;
 }
 
-// Fungsi untuk mengupload file gambar
 function upload_file() {
     $namaFile = $_FILES['gambar']['name'];
     $ukuranFile = $_FILES['gambar']['size'];
@@ -220,7 +189,7 @@ function upload_file() {
         die();
     }
 
-    if ($ukuranFile > 2048000) { // 2 MB
+    if ($ukuranFile > 2048000) {
         echo "<script>alert('Ukuran File Max 2 MB');</script>";
         die();
     }

@@ -1,8 +1,11 @@
 <?php
-    session_start();
-    if(isset($_SESSION['username'])){
-        header ("location: dashboard.php");
-    }
+session_start();
+if (isset($_SESSION['username'])) {
+    header("Location: dashboard.php");
+    exit;
+}
+
+$error = isset($_GET['error']) ? $_GET['error'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -17,7 +20,7 @@
     <meta name="description" content="Vuexy admin is super flexible, powerful, clean &amp; modern responsive bootstrap 4 admin template with unlimited possibilities.">
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
-    <title>SGExplorer - Login</title>
+    <title>Login - BKI Activity</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -66,13 +69,20 @@
             <div class="content-body">
                 <div class="auth-wrapper auth-v1 px-2">
                     <div class="auth-inner py-2">
-                        <!-- Login v1 -->
                         <div class="card mb-0">
                             <div class="card-body">
                                 <a href="#" class="brand-logo">
                                     <img src="img/logo_BKI.png" width="250px" alt="" style="margin-top: 5px; margin-bottom: 20px;">
                                 </a>
-
+                                <?php if ($error === 'inactive'): ?>
+                                    <div class="alert alert-danger">
+                                        Your account is inactive. Please contact the IT team.
+                                    </div>
+                                <?php elseif ($error === 'invalid'): ?>
+                                    <div class="alert alert-danger">
+                                        Invalid username or password.
+                                    </div>
+                                <?php endif; ?>
                                 <form class="auth-login-form mt-2" action="proses_login.php" method="POST">
                                     <div class="mb-1">
                                         <label for="username" class="form-label">Username</label>
@@ -95,7 +105,6 @@
                                     <button class="btn btn-primary_1 w-75" tabindex="4" style="margin-top: 20px;">Login</button>
                                     </center>
                                 </form>
-
                             </div>
                             <!-- <div class="container-fluid">
                                 <h5 style="text-align: right; margin-top: 20px; font-size: 10px;">* login khusus admin</h5>

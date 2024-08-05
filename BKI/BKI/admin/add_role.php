@@ -1,7 +1,21 @@
 <?php
     session_start();
-    if(!isset($_SESSION['nama_user'])){
-       header("Location: Halaman_login.php");    
+    if(!isset($_SESSION['username'])){
+    header("Location: Halaman_login.php");    
+    }
+    include 'koneksi.php';
+
+    if (isset($_POST['tambah_user'])) {
+        if (tambah_user($_POST) > 0) {
+            echo "<script>
+                    alert('Role successfully added!');
+                    document.location.href = 'role.php';
+                </script>";
+        } else {
+            echo "<script>
+                    alert('Role failed to add!');
+                </script>";
+        }
     }
 ?>
 
@@ -82,7 +96,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h2 class="brand-text" font-size: 20px;">BKI</h2>
+                        <h2 class="brand-text" style="font-size: 20px;">BKI</h2>
                         <hr>
                     </a>
                 </li>
@@ -125,13 +139,12 @@
                 </div>
             </div>
             <div class="content-body">
-                <!-- Basic Vertical form layout section start -->
                 <section id="basic-vertical-layouts">
                     <div class="row">
                         <div class="col-md-12 col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form action="proses_insert_informasi.php" method="POST" class="form form-vertical" enctype="multipart/form-data">
+                                    <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="mb-1">
@@ -141,16 +154,16 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="name" class="form-label">Name</label>
-                                                    <input type="text" class="form-control" name="name" placeholder="Full Name" required />
+                                                    <label for="nama" class="form-label">Name</label>
+                                                    <input type="text" class="form-control" name="nama" placeholder="Full Name" required />
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                <label for="division" class="form-label">Division</label>
-                                                    <select class="form-control" id="division" name="division" required>
+                                                    <label for="divisi" class="form-label">Division</label>
+                                                    <select class="form-control" id="divsi" name="divisi" required>
                                                         <option value="">-</option>
-                                                        <option value="Inspektor">Inspector</option>
+                                                        <option value="Inspector">Inspector</option>
                                                         <option value="General">General</option>
                                                         <option value="HSE">HSE</option>
                                                         <option value="Finance">Finance</option>
@@ -166,29 +179,31 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="password" class="form-label">Password</label>
-                                                    <input type="password" class="form-control" name="password" placeholder="Password" required />
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
                                                 <label for="role" class="form-label">Role</label>
                                                     <select class="form-control" id="role" name="role" required >
                                                         <option value="">-</option>
                                                         <option value="User">User</option>
                                                         <option value="Admin">Admin</option>
-                                                        <option value="Super Admin">Super Admin</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="status" class="form-label">Status</label>
-                                                    <input type="text" class="form-control" name="status" placeholder="" required />
+                                                    <label for="password" class="form-label">Password</label>
+                                                    <input type="password" class="form-control" name="password" id="password" placeholder="Password" required />
                                                 </div>
                                             </div>
+                                            <div class="col-6">
+                                            <div class="mb-1">
+                                                <label for="status" class="form-label">Status</label>
+                                                    <select class="form-control" id="status" name="status" required >
+                                                        <option value="">-</option>
+                                                        <option value="Active">Active</option>
+                                                        <option value="Non-active">Non-active</option>
+                                                    </select>
+                                            </div>
                                             <div class="col-12">
-                                                <button type="submit" class="btn btn-primary_2 me-1">Save</button>
+                                                <button type="submit" name="tambah_user" class="btn btn-primary_2 me-1">Save</button>
                                                 <a href="role.php" class="btn btn-outline-secondary">Back</a>
                                             </div>
                                         </div>
@@ -229,7 +244,7 @@
                     height: 14
                 });
             }
-        })
+        });
     </script>
 
 </body>

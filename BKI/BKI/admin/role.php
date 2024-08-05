@@ -1,13 +1,51 @@
 <?php
-    session_start();
-    if(!isset($_SESSION['nama_user'])){
-       header("Location: Halaman_login.php");    
-    }
-    
-    include("koneksi.php");
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: Halaman_login.php");
+}
 
-    $query  = "select * from informasi";
-    $result = mysqli_query($koneksi, $query);
+$nama = $_SESSION['nama'];
+$role = $_SESSION['role'];
+
+include("koneksi.php");
+
+// Delete user
+if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
+    $id = intval($_GET['id']);
+    $result = hapus_user($id);
+    if ($result > 0) {
+        echo "<script>alert('User successfully deleted!'); window.location.href='role.php';</script>";
+    } else {
+        echo "<script>alert('Failed to delete user'); window.location.href='role.php';</script>";
+    }
+}
+
+// Change status user
+if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'change_status') {
+    $id = intval($_GET['id']);
+    
+    $stmt = $koneksi->prepare("SELECT status FROM users WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    $stmt->execute();
+    $stmt->bind_result($currentStatus);
+    $stmt->fetch();
+    $stmt->close();
+
+    $currentStatus = strtolower($currentStatus);
+    $newStatus = ($currentStatus === 'active') ? 'Non-active' : 'Active';
+
+    $stmt = $koneksi->prepare("UPDATE users SET status = ? WHERE id = ?");
+    $stmt->bind_param("si", $newStatus, $id);
+    if ($stmt->execute()) {
+        echo "<script>alert('Status changed successfully!'); window.location.href='role.php';</script>";
+    } else {
+        echo "Not successful";
+    }
+    $stmt->close();
+}
+
+$query  = "SELECT * FROM users";
+$result = mysqli_query($koneksi, $query);
 ?>
 
 <!DOCTYPE html>
@@ -24,18 +62,21 @@
     <meta name="author" content="PIXINVENT">
     <title>BKI - Role</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
 
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/vendors/css/vendors.min.css">
     <!-- END: Vendor CSS-->
+
+    <!-- Favicons -->
+    <link href="../../assets/img/logo.png" rel="icon">
 
     <!-- BEGIN: Theme CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap-extended.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/colors.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/components.css">
-    <!-- <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
-    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css"> -->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/semi-dark-layout.css">
 
     <!-- BEGIN: Page CSS-->
@@ -66,7 +107,7 @@
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
@@ -83,7 +124,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h2 class="brand-text" font-size: 20px;">BKI</h2>
+                        <h2 class="brand-text" style="font-size: 20px;">BKI</h2>
                         <hr>
                     </a>
                 </li>
@@ -126,7 +167,6 @@
                 </div>
             </div>
             <div class="content-body">
-                <!-- Table Hover Animation start -->
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
                         
@@ -140,47 +180,58 @@
                                 <h4 class="card-title"></h4>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover-animation" style="min-width: 1500px;"> <!-- style="min-width: 250px;" -->
+                                <table class="table table-hover-animation" style="min-width: 1500px;">
                                     <thead>
                                         <tr style="text-align: center;">
                                             <th>No.</th>
                                             <th>NUP</th>
-                                            <th>Name</th>
-                                            <th>Division</th>
+                                            <th>Nama</th>
+                                            <th>Divisi</th>
                                             <th>Username</th>
-                                            <th>Password</th>
                                             <th>Role</th>
                                             <th>Status</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody style="text-align: center;">
-                                    <?php 
+                                        <?php 
                                         $i = 1;
-                                            if(mysqli_num_rows($result) > 0){
-                                                while($row = mysqli_fetch_assoc($result)){
-                                        ?>
-                                        <tr>
-                                            <td><?php echo $i; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td><?php echo $row['']; ?></td>
-                                            <td>
-                                                <a href="update_informasi.php?id_informasi=<?php echo $row['id_informasi']; ?> "class="btn btn-sm btn-secondary">Ubah</a> <br>
-                                                <a href=" hapus_informasi.php?id_informasi=<?php echo $row['id_informasi']; ?> "class="btn btn-sm btn-danger" style="margin-top: 5px;" onclick="return confirm('Yakin hapus data <?php echo $row['nama_tempat']; ?> ?')">Hapus</a>
-                                            </td>
-                                        </tr>
-                                        <?php
-                                            $i++;
+                                        if (mysqli_num_rows($result) > 0) {
+                                            while ($row = mysqli_fetch_assoc($result)) {
+                                                ?>
+                                                <tr>
+                                                    <td><?php echo $i; ?></td>
+                                                    <td><?php echo $row['nup']; ?></td>
+                                                    <td><?php echo $row['nama']; ?></td>
+                                                    <td><?php echo $row['divisi']; ?></td>
+                                                    <td><?php echo $row['username']; ?></td>
+                                                    <td><?php echo $row['role']; ?></td>
+                                                    <td>
+                                                        <?php
+                                                        if ($row['status'] == 'Active') {
+                                                            echo '<span class="badge bg-success">Active</span>';
+                                                        } else if ($row['status'] == 'Non-active') {
+                                                            echo '<span class="badge bg-danger">Non-active</span>';
+                                                        } else {
+                                                            echo '<span class="badge bg-secondary">Unknown</span>';
+                                                        }
+                                                        ?>
+                                                    </td>
+                                                    <td>
+                                                        <a href="edit_role.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
+                                                        <a href="role.php?id=<?php echo $row['id']; ?>&action=change_status" 
+                                                        class="btn btn-sm btn-warning" 
+                                                        onclick="return confirm('Sure change status to <?php echo (strtolower($row['status']) === 'active') ? 'Non-active' : 'Active'; ?>?')">
+                                                        Change Status
+                                                        </a>
+                                                        <a href="role.php?id=<?php echo $row['id']; ?>&action=delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+                                                    </td>
+                                                </tr>
+                                                <?php
+                                                $i++;
                                             }
-            
                                         }
-                                            ?>
+                                        ?>
                                     </tbody>
                                 </table>
                             </div>
@@ -211,6 +262,9 @@
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+
     <script>
         $(window).on('load', function() {
             if (feather) {
@@ -219,7 +273,15 @@
                     height: 14
                 });
             }
-        })
+        });
+
+        $(document).ready(function() {
+            $('.table').DataTable({
+                "paging": true,
+                "searching": true,
+                "ordering": true
+            });
+        });
     </script>
 
 </body>

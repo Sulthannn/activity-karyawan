@@ -1,7 +1,38 @@
 <?php
     session_start();
-    if(!isset($_SESSION['nama_user'])){
-       header("Location: Halaman_login.php");    
+    if (!isset($_SESSION['username'])) {
+        header("Location: Halaman_login.php");
+        exit();
+    }
+
+    include("koneksi.php");
+
+    if (isset($_GET['id'])) {
+        $id = $_GET['id'];
+        $stmt = $koneksi->prepare("SELECT * FROM users WHERE id = ?");
+        $stmt->bind_param("i", $id);
+        $stmt->execute();
+        $result = $stmt->get_result();
+        $row = $result->fetch_assoc();
+        $stmt->close();
+    } else {
+        header("Location: role.php");
+        exit();
+    }
+
+    if (isset($_POST['update'])) {
+        $password = !empty($_POST['password']) ? password_hash(htmlspecialchars($_POST['password']), PASSWORD_DEFAULT) : $row['password'];
+
+        if (update_user($_POST, $password) > 0) {
+            echo "<script>
+                    alert('Role successfully updated!');
+                    document.location.href = 'role.php';
+                </script>";
+        } else {
+            echo "<script>
+                    alert('Role failed to update!');
+                </script>";
+        }
     }
 ?>
 
@@ -82,7 +113,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h2 class="brand-text" font-size: 20px;">BKI</h2>
+                        <h2 class="brand-text" style="font-size: 20px;">BKI</h2>
                         <hr>
                     </a>
                 </li>
@@ -124,22 +155,14 @@
                     </div>
                 </div>
             </div>
-            <div class="content-body">
-                <!-- Basic Vertical form layout section start -->
                 <div class="content-body">
-                <!-- Basic Vertical form layout section start -->
                 <section id="basic-vertical-layouts">
                     <div class="row">
                         <div class="col-md-12 col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form action="proses_insert_informasi.php" method="POST" class="form form-vertical" enctype="multipart/form-data">
-                                        <div class="col-2">
-                                            <div class="mb-1">
-                                                <label for="id_..." class="form-label"></label>
-                                                <input type="text" id="id_..." class="form-control" name="id_..." value="<?=$row['id_informasi'] ?>" placeholder="" />
-                                            </div>
-                                        </div>
+                                    <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
+                                        <input type="hidden" name="id" value="<?=$row['id'] ?>" />
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="mb-1">
@@ -149,20 +172,20 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="name" class="form-label">Name</label>
-                                                    <input type="text" class="form-control" name="name" placeholder="Full Name" value="<?=$row['name'] ?>" required />
+                                                    <label for="nama" class="form-label">Name</label>
+                                                    <input type="text" class="form-control" name="nama" placeholder="Full Name" value="<?=$row['nama'] ?>" required />
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                <label for="division" class="form-label">Division</label>
-                                                    <select class="form-control" id="division" name="division" required>
+                                                    <label for="divisi" class="form-label">Division</label>
+                                                    <select class="form-control" id="divisi" name="divisi" required>
                                                         <option value="">-</option>
-                                                        <option value="Inspektor">Inspector</option>
-                                                        <option value="General">General</option>
-                                                        <option value="HSE">HSE</option>
-                                                        <option value="Finance">Finance</option>
-                                                        <option value="Marketing">Marketing</option>
+                                                        <option value="Inspector" <?= $row['divisi'] === 'Inspector' ? 'selected' : '' ?>>Inspector</option>
+                                                        <option value="General" <?= $row['divisi'] === 'General' ? 'selected' : '' ?>>General</option>
+                                                        <option value="HSE" <?= $row['divisi'] === 'HSE' ? 'selected' : '' ?>>HSE</option>
+                                                        <option value="Finance" <?= $row['divisi'] === 'Finance' ? 'selected' : '' ?>>Finance</option>
+                                                        <option value="Marketing" <?= $row['divisi'] === 'Marketing' ? 'selected' : '' ?>>Marketing</option>
                                                     </select>
                                                 </div>
                                             </div>
@@ -174,29 +197,32 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="password" class="form-label">Password</label>
-                                                    <input type="password" class="form-control" name="password" placeholder="Password" required />
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                <label for="role" class="form-label">Role</label>
-                                                    <select class="form-control" id="role" name="role" required >
+                                                    <label for="role" class="form-label">Role</label>
+                                                    <select class="form-control" id="role" name="role" required>
                                                         <option value="">-</option>
-                                                        <option value="User">User</option>
-                                                        <option value="Admin">Admin</option>
-                                                        <option value="Super Admin">Super Admin</option>
+                                                        <option value="User" <?= $row['role'] === 'User' ? 'selected' : '' ?>>User</option>
+                                                        <option value="Admin" <?= $row['role'] === 'Admin' ? 'selected' : '' ?>>Admin</option>
                                                     </select>
                                                 </div>
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
+                                                    <label for="password" class="form-label">Password</label>
+                                                    <input type="password" class="form-control" name="password" placeholder="New Password" />
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="mb-1">
                                                     <label for="status" class="form-label">Status</label>
-                                                    <input type="text" class="form-control" name="status" placeholder="" value="<?=$row['status'] ?>" required />
+                                                    <select class="form-control" id="status" name="status" required>
+                                                        <option value="">-</option>
+                                                        <option value="Active" <?= $row['status'] === 'Active' ? 'selected' : '' ?>>Active</option>
+                                                        <option value="Non-active" <?= $row['status'] === 'Non-active' ? 'selected' : '' ?>>Non-active</option>
+                                                    </select>
                                                 </div>
                                             </div>
                                             <div class="col-12">
-                                                <button type="submit" class="btn btn-primary_2 me-1">Save</button>
+                                                <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
                                                 <a href="role.php" class="btn btn-outline-secondary">Back</a>
                                             </div>
                                         </div>
@@ -205,8 +231,10 @@
                             </div>
                         </div>
                 </section>
+                </div>
             </div>
-            </div>
+        </div>
+    </div>
         </div>
     </div>
     <!-- END: Content-->
