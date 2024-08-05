@@ -10,7 +10,7 @@
     $query = "
         SELECT p.id, p.tanggal, p.gambar, p.time_upload_avident, 
             u.nup, u.nama, u.divisi
-        FROM avident p
+        FROM planning p
         JOIN users u ON p.user_id = u.id
     ";
     $result = mysqli_query($koneksi, $query);
@@ -50,6 +50,8 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
     <!-- END: Page CSS-->
 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
     <style>
         .btn-primary {
             background: linear-gradient(135deg, #AFC8AD, #88AB8E);
@@ -57,6 +59,14 @@
             border: none;
             padding: 12px 24px;
             text-decoration: none;
+        }
+        .gallery-icon {
+            color: #2A629A; 
+            font-size: 24px; 
+            transition: color 0.3s ease; 
+        }
+        .gallery-icon:hover {
+            color: #1A4F6A; 
         }
     </style>
 </head>
@@ -127,7 +137,7 @@
             <div class="content-header row">
                 <div class="content-header-left col-md-9 col-12 mb-2">
                     <div class="row breadcrumbs-top">
-                            <h2 class="float-start mb-0">Employee Avident</h2>
+                        <h2 class="float-start mb-0">Employee Avident</h2>
                     </div>
                 </div>
             </div>
@@ -136,55 +146,84 @@
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
                         
-                        <a href="add_avident.php" class="btn btn-primary">Add Data</a>
+                        <!-- <a href="add_avident.php" class="btn btn-primary">Add Data</a> -->
                         
-                        <br>
-                        <br>
-
                         <div class="card">
                             <div class="card-header">
                                 <h4 class="card-title"></h4>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover-animation" style="min-width: 1500px;"> <!-- style="min-width: 250px;" -->
+                                <table class="table table-hover-animation" style="min-width: 1500px;">
                                     <thead>
                                         <tr style="text-align: center;">
                                             <th>No.</th>
-                                            <th>Date</th>
+                                            <th style="min-width: 150px;">Date</th>
                                             <th>NUP</th>
-                                            <th>Name</th>
+                                            <th style="min-width: 250px;">Name</th>
                                             <th>Division</th>
-                                            <th>Image</th>
-                                            <th>Upload Time</th>
+                                            <th style="min-width: 250px;">Image</th>
+                                            <th style="min-width: 150px;">Upload Time</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody style="text-align: center;">
-    <?php
-    $no = 1;
-    while ($row = mysqli_fetch_assoc($result)) {
-        $gambar_arr = explode(',', $row['gambar']);
-    ?>
-    <tr>
-        <td><?= $no++ ?></td>
-        <td><?= $row['tanggal'] ?></td>
-        <td><?= $row['nup'] ?></td>
-        <td><?= $row['nama'] ?></td>
-        <td><?= $row['divisi'] ?></td>
-        <td>
-            <?php foreach ($gambar_arr as $gambar): ?>
-                <a href="img/<?= $gambar ?>" data-lightbox="gallery"><img src="img/<?= $gambar ?>" width="100" alt="Image"></a>
-            <?php endforeach; ?>
-        </td>
-        <td><?= $row['time_upload_avident'] ?></td>
-        <td>
-            <a href="edit_avident.php?id=<?= $row['id'] ?>" class="btn btn-primary">Edit</a>
-            <a href="delete_avident.php?id=<?= $row['id'] ?>" class="btn btn-danger">Delete</a>
-        </td>
-    </tr>
-    <?php } ?>
-</tbody>
+                                    <?php
+                                        $i = 1;
+                                            while ($row = mysqli_fetch_assoc($result)) {
+                                                $gambar_arr = explode(',', $row['gambar']);
+                                        ?>
+                                        <tr>
+                                            <td><?= $i++ ?></td>
+                                            <!-- <td><?php echo $row['tanggal']; ?></td> -->
+                                            <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
+                                            <!-- <td><?php echo date('j F Y', strtotime($row['tanggal'])); ?></td> -->
+                                            <td><?= $row['nup'] ?></td>
+                                            <td><?= $row['nama'] ?></td>
+                                            <td><?= $row['divisi'] ?></td>
+                                            <td>
+                                                <?php if (!empty($row['gambar'])):
+                                                    ?>
+                                                
+                                                <?php
+                                                    $gambar_arr = array_filter(explode(',', $row['gambar'])); // Menghilangkan elemen kosong
+                                                        foreach ($gambar_arr as $gambar):
+                                                    ?>
+                                                <a href="img/<?= htmlspecialchars($gambar) ?>" data-lightbox="gallery-<?= $row['id'] ?>" data-title="<?= htmlspecialchars($gambar) ?>" class="gallery-icon">
+                                                    <i class="fas fa-images" style="font-size: 18px;"></i>
+                                                </a>
+                                                
+                                                <?php endforeach;
+                                                    ?>
 
+                                            <?php else:
+                                                ?>
+                                                
+                                                No Image
+                                            <?php endif;
+                                                ?>
+                                            </td>
+                                            <td>
+                                                <?php 
+                                                    $statusText = !empty($row['gambar']) ? '' : '-';
+                                                    ?>
+                                                <?php if (empty($row['time_upload_avident']) || $row['time_upload_avident'] === '00:00:00'): ?>
+                                                    <i class="" style="font-size: 18px; color: #000;" title=""><?= $statusText ?></i>
+                                                <?php else:
+                                                    ?>
+                                                
+                                                <?= $row['time_upload_avident']
+                                                    ?>
+                                                
+                                                <?php endif;
+                                                    ?>
+                                            </td>
+                                            <td>
+                                                <a href="edit_avident.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Upload</a>
+                                                <a href="hapus_avident.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus data <?php echo $row['nama']; ?> ?')">Delete</a>
+                                            </td>
+                                        </tr>
+                                        <?php } ?>
+                                    </tbody>
                                 </table>
                             </div>
                         </div>
@@ -207,7 +246,7 @@
 
     <!-- BEGIN: Vendor JS-->
     <script src="../../../app-assets/vendors/js/vendors.min.js"></script>
-    <!-- BEGIN Vendor JS-->
+    <!-- END: Vendor JS-->
 
     <!-- BEGIN: Theme JS-->
     <script src="../../../app-assets/js/core/app-menu.js"></script>
@@ -219,10 +258,7 @@
     <script>
         $(window).on('load', function() {
             if (feather) {
-                feather.replace({
-                    width: 14,
-                    height: 14
-                });
+                feather.replace({ width: 14, height: 14 });
             }
         })
     </script>

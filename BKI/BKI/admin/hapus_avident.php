@@ -6,7 +6,7 @@
 
     if(mysqli_query($koneksi, $query)){
 
-        header("location: planning.php");
+        header("location: avident.php");
         
     }else{
 

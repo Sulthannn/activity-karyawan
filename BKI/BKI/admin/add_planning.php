@@ -10,25 +10,47 @@
     $result = mysqli_query($koneksi, "SELECT id, nup, nama, divisi FROM users WHERE status = 'Active'");
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // verifikasi input
-        $tanggal   = htmlspecialchars($_POST['tanggal']);
-        $user_id   = htmlspecialchars($_POST['user_id']);
-        $deskripsi = htmlspecialchars($_POST['deskripsi']);
+        $tanggal        = htmlspecialchars($_POST['tanggal']);
+        $user_id        = htmlspecialchars($_POST['user_id']);
+        $deskripsi      = htmlspecialchars($_POST['deskripsi']);
         $time_upload_activity_planning = htmlspecialchars($_POST['time_upload_activity_planning']);
+        $history_update = htmlspecialchars($_POST['history_update']);
+        
+        $status = 'On-progress';
+        
+        $gambar = '';
 
-        // menampilkan Data ke tabel planning
-        $data = [
-            'tanggal'   => $tanggal,
-            'user_id'   => $user_id,
-            'deskripsi' => $deskripsi,
-            'time_upload_activity_planning' => $time_upload_activity_planning
-        ];
-        if (tambah_planning($data) > 0) {
-            echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'planning.php';</script>";
+    if (isset($_FILES['gambar']) && $_FILES['gambar']['error'] == UPLOAD_ERR_OK) {
+        $target_dir  = "img/";
+        $target_file = $target_dir . basename($_FILES["gambar"]["name"]);
+        
+        if (move_uploaded_file($_FILES["gambar"]["tmp_name"], $target_file)) {
+            $gambar  = basename($_FILES["gambar"]["name"]);
+            $status  = 'Completed';
         } else {
-            echo "<script>alert('Data gagal ditambahkan!');</script>";
+            error_log('Failed to move uploaded file');
         }
     }
+    
+    $data = [
+        'tanggal'   => $tanggal,
+        'user_id'   => $user_id,
+        'deskripsi' => $deskripsi,
+        'gambar'    => $gambar,
+        'time_upload_activity_planning' => $time_upload_activity_planning,
+        'status'    => $status,
+        'history_update' => $history_update
+    ];
+
+    $result = tambah_planning($data);
+    
+    if ($result > 0) {
+        echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'planning.php';</script>";
+    } else {
+        echo "<script>alert('Data gagal ditambahkan!');</script>";
+        error_log('Failed to insert planning: ' . $koneksi->error);
+    }
+}
 ?>
 
 <!DOCTYPE html>
@@ -84,7 +106,6 @@
                     <li class="nav-item"><a class="nav-link menu-toggle" href="#"><i class="ficon" data-feather="menu"></i></a></li>
                 </ul>
             </div>
-
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
@@ -152,7 +173,7 @@
                         <div class="col-md-12 col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form id="planningForm" action="" method="POST" class="form form-vertical">
+                                    <form id="planningForm" action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="mb-1">
@@ -161,47 +182,49 @@
                                                 </div>
                                                 <div class="mb-1">
                                                     <label for="user_id" class="form-label">User</label>
-                                                    <select class="form-control" id="user_id" name="user_id" required>
+                                                    <select class="form-control" id="user_id" name="user_id" readonly >
                                                         <option value="">Select User</option>
                                                         <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                                             <option value="<?= $row['id'] ?>"><?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)</option>
-                                                        <?php endwhile; ?>
-                                                    </select>
+                                                            
+                                                            <?php endwhile;
+                                                                ?>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-6">
+                                                    <div class="mb-1">
+                                                        <label for="deskripsi" class="form-label">Description</label>
+                                                        <textarea style="height:115px" class="form-control" name="deskripsi" required></textarea>
+                                                    </div>
+                                                </div>
+                                                <!-- <div class="col-6">
+                                                    <div class="mb-1">
+                                                        <label for="gambar" class="form-label">Proof of Activity</label>
+                                                        <input type="file" class="form-control" id="gambar" name="gambar" />
+                                                    </div>
+                                                </div> -->
+                                                <div class="col-6">
+                                                    <input type="hidden" id="time_upload_activity_planning" name="time_upload_activity_planning" />
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="hidden" id="status" name="status" value="On-progress" />
+                                                </div>
+                                                <div class="col-6">
+                                                    <input type="hidden" id="history_update" name="history_update" />
+                                                </div>
+                                                <div class="col-12">
+                                                    <button type="submit" class="btn btn-primary_2 me-1">Save</button>
+                                                    <a href="planning.php" class="btn btn-outline-secondary">Back</a>
                                                 </div>
                                             </div>
-                                            <!-- <div class="col-6">
-                                                <div class="mb-1">
-                                                    <label for="user_id" class="form-label">User</label>
-                                                    <select class="form-control" id="user_id" name="user_id" required>
-                                                        <option value="">Select User</option>
-                                                        <?php while ($row = mysqli_fetch_assoc($result)): ?>
-                                                            <option value="<?= $row['id'] ?>"><?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)</option>
-                                                        <?php endwhile; ?>
-                                                    </select>
-                                                </div>
-                                            </div> -->
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                    <label for="deskripsi" class="form-label">Description</label>
-                                                    <textarea style="height:115px" class="form-control" name="deskripsi" required></textarea>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <input type="hidden" id="time_upload_activity_planning" name="time_upload_activity_planning" />
-                                            </div>
-                                            
-                                            <br>
-                                            
-                                            <div class="col-12">
-                                                <button type="submit" class="btn btn-primary_2 me-1">Save</button>
-                                                <a href="planning.php" class="btn btn-outline-secondary">Back</a>
-                                            </div>
-                                        </div>
-                                    </form>
+                                        </form>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                </section>
+                        </section>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -219,23 +242,19 @@
 
     <!-- BEGIN: Vendor JS-->
     <script src="../../../app-assets/vendors/js/vendors.min.js"></script>
-    <!-- END Vendor JS-->
+    <!-- END: Vendor JS-->
 
     <!-- BEGIN: Theme JS-->
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
-    <script>
-        document.getElementById('planningForm').addEventListener('submit', function() {
-            var now = new Date();
-            var hours = now.getHours().toString().padStart(2, '0');
-            var minutes = now.getMinutes().toString().padStart(2, '0');
-            var seconds = now.getSeconds().toString().padStart(2, '0');
-            var timeStamp = now.toISOString().split('T')[0] + ' ' + hours + ':' + minutes + ':' + seconds;
-            document.getElementById('time_upload_activity_planning').value = timeStamp;
-        });
+    <!-- BEGIN: Theme JS -->
+    <script src="../../../app-assets/js/core/app-menu.js"></script>
+    <script src="../../../app-assets/js/core/app.js"></script>
+    <!-- END: Theme JS -->
 
+    <script>
         $(window).on('load', function() {
             if (feather) {
                 feather.replace({
@@ -244,6 +263,16 @@
                 });
             }
         })
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeStamp = now.toISOString().split('T')[0] + ' ' + hours + ':' + minutes + ':' + seconds;
+            
+            document.getElementById('time_upload_activity_planning').value = timeStamp;
+        });
     </script>
 
 </body>
