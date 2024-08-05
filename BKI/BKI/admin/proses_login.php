@@ -1,27 +1,38 @@
 <?php
-    //start the session
-    session_start();
-    include ("koneksi.php");
+session_start();
+include("koneksi.php");
 
-    $username     = $_POST['username'];
-    $password     = $_POST['password'];
+date_default_timezone_set('Asia/Jakarta');
 
-    $query = "SELECT * FROM users WHERE username = '$username' and password = md5('$password')" ;
-    $result = mysqli_query($koneksi, $query);
-    
-    if(mysqli_num_rows($result) > 0){
-        while($row = mysqli_fetch_assoc($result)){
-            $_SESSION['username'] = $username;
-            $_SESSION['username'] = $row['username'];
-        }
-        header("location: dashboard.php");
-    }else{
+$username = $_POST['username'];
+$password = $_POST['password'];
 
-        header("location: Halaman_login.php");
-    }
-?>
+$query = "SELECT * FROM users WHERE username = '$username' AND password = md5('$password')";
+$result = mysqli_query($koneksi, $query);
 
-<!-- echo '<script>alert("Berhasil masuk!"); window.location.href = "Halaman_Beranda.php";</script>';
+if (mysqli_num_rows($result) > 0) {
+    $row = mysqli_fetch_assoc($result);
+
+    if ($row['status'] === 'Active') {
+        $_SESSION['username'] = $username;
+        $_SESSION['user_id'] = $row['id'];
+        $_SESSION['nama'] = $row['nama'];
+        $_SESSION['role'] = $row['role'];
+
+        $user_id = $_SESSION['user_id'];
+        $tanggal = date('Y-m-d');
+        $time_login = date('H:i:s');
+
+        $insert_query = "INSERT INTO time (tanggal, user_id, time_login, geotagging) VALUES ('$tanggal', $user_id, '$time_login', '')";
+        mysqli_query($koneksi, $insert_query);
+        header("Location: dashboard.php");
+        exit;
     } else {
-        echo '<script>alert("Gagal masuk. Periksa kembali username dan password Anda."); window.location.href = "Halaman_login.php";</script>';
-    } -->
+        header("Location: Halaman_login.php?error=inactive");
+        exit;
+    }
+} else {
+    header("Location: Halaman_login.php?error=invalid");
+    exit;
+}
+?>

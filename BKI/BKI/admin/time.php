@@ -1,13 +1,25 @@
 <?php
-    session_start();
-    if(!isset($_SESSION['username'])){
-       header("Location: Halaman_login.php");    
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("location: Halaman_login.php");
+    exit;
     }
-    
+
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
+
     include("koneksi.php");
 
-    $query  = "select * from time";
+    $query = "
+    SELECT p.id, p.tanggal, p.time_login, p.time_logout, p.geotagging, 
+        u.nup, u.nama, u.divisi
+    FROM time p
+    JOIN users u ON p.user_id = u.id
+    WHERE u.status = 'active'
+";
     $result = mysqli_query($koneksi, $query);
+
+    $current_time = date('H:i:s');
 ?>
 
 <!DOCTYPE html>
@@ -29,13 +41,14 @@
     <link rel="stylesheet" type="text/css" href="../../../app-assets/vendors/css/vendors.min.css">
     <!-- END: Vendor CSS-->
 
+    <!-- Favicons -->
+    <link href="../../assets/img/logo.png" rel="icon">
+
     <!-- BEGIN: Theme CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap-extended.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/colors.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/components.css">
-    <!-- <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
-    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css"> -->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/semi-dark-layout.css">
 
     <!-- BEGIN: Page CSS-->
@@ -50,7 +63,14 @@
             padding: 12px 24px;
             text-decoration: none;
         }
+        .active {
+            color: green;
+        }
+        .inactive {
+            color: red;
+        }
     </style>
+
 </head>
 
 <body class="vertical-layout vertical-menu-modern  navbar-floating footer-static" data-open="click" data-menu="vertical-menu-modern" data-col="">
@@ -66,14 +86,13 @@
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
-            
         </div>
     </nav>
     <!-- END: Header-->
@@ -84,7 +103,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h2 class="brand-text" font-size: 20px;">BKI</h2>
+                        <h2 class="brand-text" style="font-size: 20px;">BKI</h2>
                         <hr>
                     </a>
                 </li>
@@ -127,7 +146,6 @@
                 </div>
             </div>
             <div class="content-body">
-                <!-- Table Hover Animation start -->
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
                         <div class="card">
@@ -146,7 +164,6 @@
                                             <th>Login Time</th>
                                             <th>Logout Time</th>
                                             <th>Geotagging</th>
-                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody style="text-align: center;">
@@ -154,20 +171,19 @@
                                         $i = 1;
                                         if ($result->num_rows > 0) {
                                             while ($row = $result->fetch_assoc()) {
+                                                $time_logout_display = $row['time_logout'] ? htmlspecialchars($row['time_logout']) : $current_time;
                                     ?>
                                         <tr>
                                             <td><?php echo $i; ?></td>
                                             <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
-                                            <td><?php echo htmlspecialchars($row['user_id']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['name']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['division']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['time_login']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['time_logout']); ?></td>
-                                            <td><?php echo htmlspecialchars($row['geotagging']); ?></td>
-                                            <td>
-                                                <a href="update_informasi.php?id_informasi=<?php echo $row['id_informasi']; ?>" class="btn btn-sm btn-secondary">Ubah</a> <br>
-                                                <a href="hapus_informasi.php?id_informasi=<?php echo $row['id_informasi']; ?>" class="btn btn-sm btn-danger" style="margin-top: 5px;" onclick="return confirm('Yakin hapus data <?php echo $row['name']; ?> ?')">Hapus</a>
+                                            <td><?php echo htmlspecialchars($row['nup'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['nama'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['divisi'] ?? ''); ?></td>
+                                            <td><?php echo htmlspecialchars($row['time_login'] ?? ''); ?></td>
+                                            <td id="logout-time-<?php echo $row['id']; ?>" class="<?php echo $row['time_logout'] ? 'inactive' : 'active'; ?>">
+                                                <?php echo htmlspecialchars($time_logout_display); ?>
                                             </td>
+                                            <td><?php echo htmlspecialchars($row['geotagging'] ?? ''); ?></td>
                                         </tr>
                                     <?php
                                                 $i++;
@@ -183,7 +199,6 @@
             </div>
         </div>
     </div>
-</div>
     <!-- END: Content-->
 
     <div class="sidenav-overlay"></div>
@@ -204,6 +219,8 @@
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
 
     <script>
         $(window).on('load', function() {
@@ -214,6 +231,79 @@
                 });
             }
         })
+
+        function formatTime(date) {
+            let hours = date.getHours();
+            let minutes = date.getMinutes();
+            let seconds = date.getSeconds();
+            hours = hours < 10 ? '0' + hours : hours;
+            minutes = minutes < 10 ? '0' + minutes : minutes;
+            seconds = seconds < 10 ? '0' + seconds : seconds;
+            return hours + ':' + minutes + ':' + seconds;
+        }
+
+        function updateLogoutTimes() {
+            document.querySelectorAll('[id^="logout-time-"]').forEach(function (element) {
+                if (element.classList.contains('active')) {
+                    let currentTime = new Date();
+                    element.innerText = formatTime(currentTime);
+                }
+            });
+        }
+
+        updateLogoutTimes();
+        setInterval(updateLogoutTimes, 1000);
+
+        // Memeriksa apakah browser mendukung Geolocation API
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(success, error);
+        } else {
+            alert("Geolocation tidak didukung oleh browser ini.");
+        }
+
+        function success(position) {
+            const latitude = position.coords.latitude;
+            const longitude = position.coords.longitude;
+
+            fetch('simpan_geotagging.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    latitude: latitude,
+                    longitude: longitude
+                })
+            }).then(response => response.json())
+            .then(data => {
+                if(data.status == 'success') {
+                    console.log('Geolocation berhasil disimpan');
+                    getGeotaggingData();
+                } else {
+                    console.log('Geolocation gagal disimpan');
+                }
+            });
+        }
+
+        function error() {
+            alert("Tidak dapat mengakses lokasi Anda.");
+        }
+
+        function getGeotaggingData() {
+            $.ajax({
+                url: 'get_geotagging.php',
+                method: 'GET',
+                success: function(data) {
+                    $('tbody').html(data);
+                }
+            });
+        }
+
+        setInterval(getGeotaggingData, 5000);
+        
+        $(document).ready(function() {
+            getGeotaggingData();
+        });
     </script>
 
 </body>

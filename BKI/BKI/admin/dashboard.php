@@ -1,8 +1,13 @@
 <?php
     session_start();
     if(!isset($_SESSION['username'])){
-       header("Location: Halaman_login.php");    
+    header("Location: Halaman_login.php");    
     }
+
+    include("koneksi.php");
+
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
 ?>
 
 <!DOCTYPE html>
@@ -67,7 +72,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h1 class="brand-text" font-size: 20px;">BKI</h1>
+                        <h1 class="brand-text" style="font-size: 20px;">BKI</h1>
                         <hr>
                     </a>
                 </li>
@@ -105,7 +110,7 @@
             <div class="content-header row">
                 <div class="content-header-left col-md-9 col-12 mb-2">
                     <div class="row breadcrumbs-top">
-                            <h2 class="float-start mb-0" style="font-size: 30px;">Welcome, Super Admin!</h2>
+                            <h2 class="float-start mb-0" style="font-size: 30px;">Welcome, <?php echo $nama; ?></h2>
                     </div>
                 </div>
             </div>
