@@ -7,9 +7,9 @@
 
     include("koneksi.php");
 
-    $id = $_GET['id'];
+    $id    = $_GET['id'];
     $query = "
-        SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, 
+        SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.gambar,
             u.id as user_id, u.nup, u.nama, u.divisi
         FROM planning p
         JOIN users u ON p.user_id = u.id
@@ -163,49 +163,54 @@
                                             <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
                                                 <input type="hidden" name="id" value="<?=$row['id'] ?>" />
                                                 <input type="hidden" name="user_id" value="<?=$row['user_id'] ?>" />
-                                                    <div class="row">
-                                                        <div class="col-6">
-                                                            <div class="mb-1">
-                                                                <label for="tanggal" class="form-label">Date</label>
-                                                                <input type="date" class="form-control" name="tanggal" value="<?=$row['tanggal'] ?>" required />
-                                                            </div>
-                                                            <div class="mb-1">
-                                                                <label for="nama" class="form-label">Name</label>
-                                                                <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" readonly />
-                                                            </div>
+                                                <div class="row">
+                                                    <div class="col-6">
+                                                        <div class="mb-1">
+                                                            <label for="tanggal" class="form-label">Date</label>
+                                                            <input type="date" class="form-control" name="tanggal" value="<?=$row['tanggal'] ?>" required />
                                                         </div>
-                                                        <!-- <div class="col-6">
-                                                            <div class="mb-1">
-                                                                <label for="nama" class="form-label">Name</label>
-                                                                <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" readonly />
-                                                            </div>
-                                                        </div> -->
-                                                        <div class="col-6">
-                                                            <div class="mb-1">
-                                                                <label for="deskripsi" class="form-label">Description</label>
-                                                                <textarea style="height: 115px;" class="form-control" name="deskripsi" required><?=$row['deskripsi'] ?></textarea>
-                                                            </div>
-                                                        </div>
-                                                        <div class="col-6">
-                                                            <!-- <input type="hidden" id="time_upload_activity_planning" name="time_upload_activity_planning" /> -->
-                                                        </div>
-                                                        
-                                                        <br>
-                                                        
-                                                        <div class="col-12">
-                                                            <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
-                                                            <a href="planning.php" class="btn btn-outline-secondary">Back</a>
+                                                        <div class="mb-1">
+                                                            <label for="nama" class="form-label">User</label>
+                                                            <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" readonly />
                                                         </div>
                                                     </div>
-                                                </form>
-                                            </div>
+                                                    <!-- <div class="col-6">
+                                                        <div class="mb-1">
+                                                            <label for="nama" class="form-label">Name</label>
+                                                            <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" readonly />
+                                                        </div>
+                                                    </div> -->
+                                                    <div class="col-6">
+                                                        <div class="mb-1">
+                                                            <label for="deskripsi" class="form-label">Description</label>
+                                                            <textarea style="height: 115px;" class="form-control" name="deskripsi" required><?=$row['deskripsi'] ?></textarea>
+                                                        </div>
+                                                    </div>
+                                                    <!-- <div class="col-6">
+                                                        <input type="hidden" id="time_upload_activity_planning" name="time_upload_activity_planning" />
+                                                    </div> -->
+                                                    
+                                                    <br>
+                                                    
+                                                    <div class="col-6">
+                                                        <input type="hidden" id="gambar" name="gambar" value="<?= $row['gambar'] ?>" readonly />
+                                                    </div>
+                                                    <div class="col-12">
+                                                        <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
+                                                        <a href="planning.php" class="btn btn-outline-secondary">Back</a>
+                                                    </div>
+                                                </div>
+                                            </form>
                                         </div>
                                     </div>
-                                </section>
-                            </div>
+                                </div>
+                            </section>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
     <!-- END: Content-->
 
     <div class="sidenav-overlay"></div>
@@ -220,7 +225,7 @@
 
     <!-- BEGIN: Vendor JS-->
     <script src="../../../app-assets/vendors/js/vendors.min.js"></script>
-    <!-- END Vendor JS-->
+    <!-- END: Vendor JS-->
 
     <!-- BEGIN: Theme JS-->
     <script src="../../../app-assets/js/core/app-menu.js"></script>

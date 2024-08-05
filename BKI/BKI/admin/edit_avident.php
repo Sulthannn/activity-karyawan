@@ -1,7 +1,84 @@
 <?php
     session_start();
-    if(!isset($_SESSION['nama_user'])){
-       header("Location: Halaman_login.php");    
+    if (!isset($_SESSION['username'])) {
+        header("location: Halaman_login.php");
+        exit;
+    }
+
+    require 'koneksi.php';
+
+    $id    = $_GET['id'];
+    $query = "
+        SELECT p.id, p.tanggal, p.time_upload_avident, p.deskripsi, p.gambar,
+            u.id as user_id, u.nup, u.nama, u.divisi
+        FROM planning p
+        JOIN users u ON p.user_id = u.id
+        WHERE p.id = '$id'
+    ";
+
+    $result = mysqli_query($koneksi, $query);
+    $row    = mysqli_fetch_assoc($result);
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $tanggal   = htmlspecialchars($_POST['tanggal']);
+        $user_id   = htmlspecialchars($_POST['user_id']);
+        $deskripsi = htmlspecialchars($_POST['deskripsi']);
+        $time_upload_avident = htmlspecialchars($_POST['time_upload_avident']);
+
+        $uploaded_files = [];
+        $upload_dir = 'img/';
+
+        foreach ($_FILES['gambar']['name'] as $key => $name) {
+            $tmp_name = $_FILES['gambar']['tmp_name'][$key];
+            
+            if (!empty($tmp_name)) {
+                $file_name   = time() . '_' . basename($name);
+                $target_file = $upload_dir . $file_name;
+            
+                $check = getimagesize($tmp_name);
+                if ($check !== false) {
+                    if (move_uploaded_file($tmp_name, $target_file)) {
+                        $uploaded_files[] = $file_name;
+                    } else {
+                        echo "<script>alert('File upload failed for " . htmlspecialchars($name) . "');</script>";
+                    }
+                } else {
+                    echo "<script>alert('File " . htmlspecialchars($name) . " is not an image');</script>";
+                }
+            }
+        }
+
+        $existing_files = array_filter(explode(',', $row['gambar']));
+        $existing_files = array_map('trim', $existing_files);
+        
+        $images_to_delete = array_map('trim', explode(',', $_POST['images_to_delete']));
+        $remaining_images = array_diff($existing_files, $images_to_delete);
+        
+        $gambar = implode(',', array_merge($remaining_images, $uploaded_files));
+        
+        $data = [
+            'id' => $id,
+            'tanggal'   => $tanggal,
+            'user_id'   => $user_id,
+            'gambar'    => $gambar,
+            'time_upload_avident' => $time_upload_avident,
+            'deskripsi' => $deskripsi,
+            'time_upload_activity_planning' => $row['time_upload_activity_planning'],
+            'history_update' => $row['history_update'],
+            'status'    => $row['status']
+        ];
+
+        if (update_planning($data) > 0) {
+            foreach ($images_to_delete as $image) {
+                $file_path = 'img/' . $image;
+                if (file_exists($file_path)) {
+                    unlink($file_path);
+                }
+            }
+            echo "<script>alert('Data berhasil diupdate!'); window.location.href = 'avident.php';</script>";
+        } else {
+            echo "<script>alert('Data gagal diupdate!');</script>";
+        }
     }
 ?>
 
@@ -32,6 +109,7 @@
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/semi-dark-layout.css">
+    <!-- END: Theme CSS-->
 
     <!-- BEGIN: Page CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/core/menu/menu-types/vertical-menu.css">
@@ -49,6 +127,43 @@
             padding: 12px 24px;
             text-decoration: none;
         }
+        .image-container {
+            display: inline-block;
+            position: relative;
+            margin-right: 10px;
+        }
+        .image-container img {
+            width: 100px;
+            border: 1px solid #ddd;
+            display: block;
+        }
+        .delete-button {
+            display: none;
+            position: absolute;
+            top: 0;
+            right: 0;
+            background: red;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            text-align: center;
+            line-height: 20px;
+            cursor: pointer;
+        }
+        .image-container:hover .delete-button {
+            display: block;
+        }
+        .preview-image {
+            display: inline-block;
+            position: relative;
+            margin-right: 10px;
+        }
+        .preview-image img {
+            width: 100px;
+            border: 1px solid #ddd;
+        }
     </style>
 </head>
 
@@ -62,7 +177,6 @@
                     <li class="nav-item"><a class="nav-link menu-toggle" href="#"><i class="ficon" data-feather="menu"></i></a></li>
                 </ul>
             </div>
-
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
@@ -74,7 +188,7 @@
             </ul>
         </div>
     </nav>
-    <!-- END: Header-->
+    <!-- END: Header-->
 
     <!-- BEGIN: Main Menu-->
     <div class="main-menu menu-fixed menu-dark menu-accordion menu-shadow" data-scroll-to-active="true">
@@ -91,7 +205,6 @@
         <div class="shadow-bottom"></div>
             <div class="main-menu-content">
                 <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-                
                     <li class="nav-item"><a class="d-flex align-items-center" href="dashboard.php"><i data-feather="home"></i><span class="menu-title text-truncate" data-i18n="Dashboard">Dashboard</span></a>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="#"><i data-feather="users"></i><span class="menu-title text-truncate" data-i18n="Employee Activity">Employee Activity</span></a>
@@ -131,66 +244,74 @@
                         <div class="col-md-12 col-12">
                             <div class="card">
                                 <div class="card-body">
-                                    <form action="proses_insert_informasi.php" method="POST" class="form form-vertical" enctype="multipart/form-data">
-                                        <div class="col-2">
-                                            <div class="mb-1">
-                                                <label for="id_..." class="form-label"></label>
-                                                <input type="text" id="id_..." class="form-control" name="id_..." value="<?=$row['id_informasi'] ?>" placeholder="" />
-                                            </div>
-                                        </div>
+                                    <form id="avidentForm" action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
+                                        <input type="hidden" id="images_to_delete" name="images_to_delete" value="" />         
                                         <div class="row">
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="date" class="form-label">Date</label>
-                                                    <input type="date" class="form-control" name="date" value="<?=$row['date'] ?>" placeholder="" required />
+                                                    <label for="tanggal" class="form-label">Date</label>
+                                                    <input type="date" class="form-control" name="tanggal" value="<?= htmlspecialchars($row['tanggal']) ?>" readonly />
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="nup" class="form-label">NUP</label>
-                                                    <input type="text" class="form-control" name="nup" value="<?=$row['nup'] ?>" placeholder="Number ..." required />
+                                                    <label for="user_id" class="form-label">User</label>
+                                                    <select class="form-control" id="user_id" name="user_id" disabled>
+                                                        <option value="">Select User</option>
+                                                        <?php
+                                                        $user_query = mysqli_query($koneksi, "SELECT id, nup, nama, divisi FROM users WHERE status = 'Active'");
+                                                        while ($user = mysqli_fetch_assoc($user_query)) {
+                                                            $selected = $user['id'] == $row['user_id'] ? 'selected' : '';
+                                                            echo "<option value=\"{$user['id']}\" $selected>{$user['nup']} - {$user['nama']} ({$user['divisi']})</option>";
+                                                        }
+                                                        ?>
+                                                        </select>
+                                                    <div></div>
+                                                        <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                    <label for="name" class="form-label">Name</label>
-                                                    <input type="text" class="form-control" name="name" value="<?=$row['name'] ?>" placeholder="Full Name" required />
+                                                <div class="col-6">
+                                                    <div class="mb-1">
+                                                        <label for="deskripsi" class="form-label">Description</label>
+                                                        <textarea style="height: 115px;" class="form-control" name="deskripsi" readonly><?= $row['deskripsi'] ?></textarea>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                <label for="division" class="form-label">Division</label>
-                                                    <select class="form-control" id="division" name="division" value="<?=$row['division'] ?>" required >
-                                                        <option value="">-</option>
-                                                        <option value="Inspektor">Inspector</option>
-                                                        <option value="General">General</option>
-                                                        <option value="HSE">HSE</option>
-                                                        <option value="Finance">Finance</option>
-                                                        <option value="Marketing">Marketing</option>
-                                                    </select>
+                                                <div class="col-6">
+                                                    <div class="mb-1">
+                                                        <label for="gambar" class="form-label">Proof of Activity</label>
+                                                        <input type="file" class="form-control" id="gambar" name="gambar[]" multiple />
+                                                        <div id="image-preview" class="mt-2">
+                                                            <?php
+                                                            $existing_images = explode(',', $row['gambar']);
+                                                            foreach ($existing_images as $image) {
+                                                                if ($image) {
+                                                                    echo "
+                                                                    <div class=\"image-container\">
+                                                                        <img src=\"img/$image\" />
+                                                                        <button type=\"button\" class=\"btn btn-danger btn-sm delete-image\" data-image=\"$image\">X</button>
+                                                                    </div>
+                                                                    ";
+                                                                }
+                                                            }
+                                                            ?>
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                    <label for="img" class="form-label">Image</label>
-                                                    <input type="file" class="form-control" name="img" value="<?=$row['img'] ?>" placeholder="" required />
+                                                <div class="col-6">
+                                                    <input type="hidden" id="time_upload_avident" name="time_upload_avident" value="<?= htmlspecialchars($row['time_upload_avident']) ?>" />
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
-                                                    <label for="upload-time" class="form-label">Upload Time</label>
-                                                    <input type="time" class="form-control" name="upload-time" value="<?=$row['waktu_unggah'] ?>" placeholder="" required />
+                                            
+                                                <br>
+                                            
+                                                <div class="col-12">
+                                                    <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
+                                                    <a href="avident.php" class="btn btn-outline-secondary">Back</a>
                                                 </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <button type="submit" class="btn btn-primary_2 me-1">Save</button>
-                                                <a href="avident.php" class="btn btn-outline-secondary">Back</a>
                                             </div>
                                         </div>
                                     </form>
                                 </div>
                             </div>
                         </div>
+                    </div>
                 </section>
             </div>
         </div>
@@ -209,7 +330,7 @@
 
     <!-- BEGIN: Vendor JS-->
     <script src="../../../app-assets/vendors/js/vendors.min.js"></script>
-    <!-- BEGIN Vendor JS-->
+    <!-- END: Vendor JS-->
 
     <!-- BEGIN: Theme JS-->
     <script src="../../../app-assets/js/core/app-menu.js"></script>
@@ -225,6 +346,67 @@
                 });
             }
         })
+
+        document.getElementById('avidentForm').addEventListener('submit', function() {
+            var now = new Date();
+            var hours = now.getHours().toString().padStart(2, '0');
+            var minutes = now.getMinutes().toString().padStart(2, '0');
+            var seconds = now.getSeconds().toString().padStart(2, '0');
+            var timeStamp = now.toISOString().split('T')[0] + ' ' + hours + ':' + minutes + ':' + seconds;
+            document.getElementById('time_upload_avident').value = timeStamp;
+        });
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const imageToDeleteField = document.getElementById('images_to_delete');
+
+        document.getElementById('gambar').addEventListener('change', function(event) {
+            const previewContainer = document.getElementById('image-preview');
+
+            const existingImages = Array.from(previewContainer.querySelectorAll('.image-container img')).map(img => img.src.split('/').pop());
+            
+            Array.from(event.target.files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const previewImage = document.createElement('div');
+                    previewImage.className = 'preview-image';
+                    previewImage.innerHTML = `
+                        <img src="${e.target.result}" />
+                        <button type="button" class="btn btn-danger btn-sm delete-preview-image">X</button>
+                    `;
+                    previewContainer.appendChild(previewImage);
+
+                    previewImage.querySelector('.delete-preview-image').addEventListener('click', function() {
+                        const index = Array.from(previewContainer.children).indexOf(previewImage);
+                        const fileList = Array.from(event.target.files);
+                        fileList.splice(index, 1);
+                        event.target.files = new FileListItems(fileList);
+                        previewContainer.removeChild(previewImage);
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+        });
+
+        function FileListItems(files) {
+            const b = new ClipboardEvent("").clipboardData || new DataTransfer()
+            for (let i = 0, len = files.length; i < len; i++) b.items.add(files[i])
+            return b.files
+        }
+
+        document.querySelectorAll('.delete-image').forEach(button => {
+            button.addEventListener('click', function() {
+                const image = this.dataset.image;
+                const imagesToDelete = imageToDeleteField.value ? imageToDeleteField.value.split(',') : [];
+                if (!imagesToDelete.includes(image)) {
+                    imagesToDelete.push(image);
+                }
+                imageToDeleteField.value = imagesToDelete.join(',');
+
+                const container = this.closest('.image-container');
+                container.parentNode.removeChild(container);
+            });
+        });
+    });
     </script>
 
 </body>
