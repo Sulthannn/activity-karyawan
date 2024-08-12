@@ -6,17 +6,50 @@ if (!isset($_SESSION['username'])) {
 
 $nama = $_SESSION['nama'];
 $role = $_SESSION['role'];
+$image = $_SESSION['image'];
 
 include("koneksi.php");
+
+function is_superadmin() {
+    return $_SESSION['role'] === 'Super-Admin';
+}
+
+function is_admin() {
+    return $_SESSION['role'] === 'Admin';
+}
+
+function is_user() {
+    return $_SESSION['role'] === 'User';
+}
 
 // Delete user
 if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
     $id = intval($_GET['id']);
     $result = hapus_user($id);
     if ($result > 0) {
-        echo "<script>alert('User successfully deleted!'); window.location.href='role.php';</script>";
+        echo "<script>
+            window.onload = function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Role successfully deleted!',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    document.location.href = 'role.php';
+                });
+            }
+            </script>";
     } else {
-        echo "<script>alert('Failed to delete user'); window.location.href='role.php';</script>";
+        echo "<script>
+            window.onload = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Role failed to deleted!',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        </script>";
     }
 }
 
@@ -37,9 +70,29 @@ if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'change_s
     $stmt = $koneksi->prepare("UPDATE users SET status = ? WHERE id = ?");
     $stmt->bind_param("si", $newStatus, $id);
     if ($stmt->execute()) {
-        echo "<script>alert('Status changed successfully!'); window.location.href='role.php';</script>";
+        echo "<script>
+            window.onload = function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Status changed successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
+                    document.location.href = 'role.php';
+                });
+            }
+            </script>";
     } else {
-        echo "Not successful";
+        echo "<script>
+            window.onload = function() {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Status failed changed successfully',
+                    showConfirmButton: false,
+                    timer: 1500
+                });
+            }
+        </script>";
     }
     $stmt->close();
 }
@@ -63,7 +116,7 @@ $result = mysqli_query($koneksi, $query);
     <title>BKI - Role</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-    <link rel="stylesheet" href="https://cdn.datatables.net/1.11.5/css/jquery.dataTables.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/vendors/css/vendors.min.css">
@@ -91,6 +144,23 @@ $result = mysqli_query($koneksi, $query);
             padding: 12px 24px;
             text-decoration: none;
         }
+        .image-preview {
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            max-width: 100%;
+            height: auto;
+        }
+        .image-preview:hover {
+            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #searchInput:hover {
+            border: 1px solid #003285 !important;
+        }
     </style>
 </head>
 
@@ -107,10 +177,11 @@ $result = mysqli_query($koneksi, $query);
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
-                        <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
@@ -148,6 +219,9 @@ $result = mysqli_query($koneksi, $query);
                     </li><br>
                     <li class="active nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
                     </li>
+                    <br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -169,21 +243,33 @@ $result = mysqli_query($koneksi, $query);
             <div class="content-body">
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
-                        
+                        <?php if (is_superadmin()): ?>
                         <a href="add_role.php" class="btn btn-primary">Add Data</a>
-                        
+                        <?php endif; ?>
                         <br>
                         <br>
-
                         <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title"></h4>
-                            </div>
+                        <div class="card-header d-flex justify-content-between">
+    <div>
+        <label for="entriesSelect">Show</label>
+        <select id="entriesSelect" class="form-control" style="width: auto; display: inline-block;">
+            <option value="1">1</option>
+            <option value="3">3</option>
+            <option value="50">50</option>
+            <option value="100">100</option>
+        </select>
+        <label for="entriesSelect">entries</label>
+    </div>
+    <div>
+        <input type="text" id="searchInput" placeholder="Search..." class="form-control search-input" style="width: 220px;" onkeyup="searchTable()">
+    </div>
+</div>
                             <div class="table-responsive">
                                 <table class="table table-hover-animation" style="min-width: 1500px;">
                                     <thead>
                                         <tr style="text-align: center;">
                                             <th>No.</th>
+                                            <th>Image</th>
                                             <th>NUP</th>
                                             <th>Nama</th>
                                             <th>Divisi</th>
@@ -193,7 +279,7 @@ $result = mysqli_query($koneksi, $query);
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tbody style="text-align: center;">
+                                    <tbody id="tableBody" style="text-align: center;">
                                         <?php 
                                         $i = 1;
                                         if (mysqli_num_rows($result) > 0) {
@@ -201,6 +287,11 @@ $result = mysqli_query($koneksi, $query);
                                                 ?>
                                                 <tr>
                                                     <td><?php echo $i; ?></td>
+                                                    <td>
+                                                        <a href="img/<?php echo $row['image']; ?>" data-lightbox="profile-image">
+                                                            <img src="img/<?php echo $row['image']; ?>" class="image-preview" alt="User Image" width="125" />
+                                                        </a>
+                                                    </td>
                                                     <td><?php echo $row['nup']; ?></td>
                                                     <td><?php echo $row['nama']; ?></td>
                                                     <td><?php echo $row['divisi']; ?></td>
@@ -218,13 +309,15 @@ $result = mysqli_query($koneksi, $query);
                                                         ?>
                                                     </td>
                                                     <td>
+                                                    <?php if (is_superadmin()): ?>
                                                         <a href="edit_role.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
-                                                        <a href="role.php?id=<?php echo $row['id']; ?>&action=change_status" 
-                                                        class="btn btn-sm btn-warning" 
-                                                        onclick="return confirm('Sure change status to <?php echo (strtolower($row['status']) === 'active') ? 'Non-active' : 'Active'; ?>?')">
-                                                        Change Status
+                                                        <a href="#" class="btn btn-sm btn-warning" onclick="confirmChangeStatus(<?php echo $row['id']; ?>, '<?php echo strtolower($row['status']); ?>'); return false;">
+                                                            Change Status
                                                         </a>
-                                                        <a href="role.php?id=<?php echo $row['id']; ?>&action=delete" class="btn btn-sm btn-danger" onclick="return confirm('Are you sure you want to delete this user?')">Delete</a>
+                                                        <?php endif; ?>
+                                                        <?php if (is_superadmin() || is_admin()): ?>
+                                                        <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
+                                                            <?php endif; ?>
                                                     </td>
                                                 </tr>
                                                 <?php
@@ -234,6 +327,9 @@ $result = mysqli_query($koneksi, $query);
                                         ?>
                                     </tbody>
                                 </table>
+                                <div id="tableFooter" class="d-flex justify-content-between">
+                                    <div id="entriesInfo"></div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -263,7 +359,9 @@ $result = mysqli_query($koneksi, $query);
     <!-- END: Theme JS-->
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 
     <script>
         $(window).on('load', function() {
@@ -274,15 +372,189 @@ $result = mysqli_query($koneksi, $query);
                 });
             }
         });
-
-        $(document).ready(function() {
-            $('.table').DataTable({
-                "paging": true,
-                "searching": true,
-                "ordering": true
-            });
+        
+    function confirmDelete(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'This action cannot be undone!',
+                    text: "Deleting this user will remove all associated data. Are you sure you want to proceed?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'role.php?id=' + id + '&action=delete';
+                    }
+                });
+            }
         });
+    }
+
+    function confirmChangeStatus(id, currentStatus) {
+        let newStatus = (currentStatus === 'active') ? 'Non-active' : 'Active';
+        Swal.fire({
+            title: 'Change Status',
+            text: "Are you sure you want to change status to " + newStatus + "?",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, change it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = 'role.php?id=' + id + '&action=change_status';
+            }
+        });
+    }
+
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Final Check',
+                    text: "Have you finished all your work for today?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, I am done!',
+                    cancelButtonText: 'No, let me finish'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'logout.php';
+                    }
+                });
+            }
+        });
+    }
+
+    function confirmBreak() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will take a break!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, break!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = 'break.php';
+            }
+        });
+    }
+
+    function searchTable() {
+            var input, filter, table, tr, td, i, j, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toLowerCase();
+            table = document.querySelector(".table-hover-animation");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { 
+                tr[i].style.display = "none";
+                td = tr[i].getElementsByTagName("td");
+                for (j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break;
+                        }
+                    }
+                }
+            }
+            updateTableEntries();
+        }
+
+        let currentPage = 1;
+    let entriesPerPage = parseInt(document.getElementById('entriesSelect').value);
+
+    function paginateTable() {
+        const table = document.querySelector(".table-hover-animation");
+        const tr = table.getElementsByTagName("tr");
+        const totalEntries = tr.length - 1; 
+        const totalPages = Math.ceil(totalEntries / entriesPerPage);
+
+        for (let i = 1; i < tr.length; i++) {
+            tr[i].style.display = "none";
+        }
+        const start = (currentPage - 1) * entriesPerPage + 1;
+        const end = Math.min(start + entriesPerPage - 1, totalEntries);
+        for (let i = start; i <= end; i++) {
+            tr[i].style.display = "";
+        }
+
+        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+
+        document.getElementById('prevPage').disabled = currentPage === 1;
+        document.getElementById('nextPage').disabled = currentPage === totalPages;
+
+        updateTableEntries();
+    }
+
+    function updateTableEntries() {
+        const table = document.querySelector(".table-hover-animation");
+        const tr = table.getElementsByTagName("tr");
+        const totalEntries = tr.length - 1;
+        const showingEntries = Math.min(entriesPerPage, totalEntries - (currentPage - 1) * entriesPerPage);
+
+        const startEntry = totalEntries > 0 ? (currentPage - 1) * entriesPerPage + 1 : 0;
+        const endEntry = startEntry + showingEntries - 1;
+
+        document.getElementById('entriesInfo').textContent = `Showing ${startEntry} to ${endEntry} of ${totalEntries} entries`;
+    }
+
+    document.getElementById('entriesSelect').addEventListener('change', function() {
+        entriesPerPage = parseInt(this.value);
+        currentPage = 1; 
+        paginateTable();
+    });
+
+    document.getElementById('prevPage').addEventListener('click', function() {
+        if (currentPage > 1) {
+            currentPage--;
+            paginateTable();
+        }
+    });
+
+    document.getElementById('nextPage').addEventListener('click', function() {
+        const table = document.querySelector(".table-hover-animation");
+        const totalEntries = table.getElementsByTagName("tr").length - 1;
+        const totalPages = Math.ceil(totalEntries / entriesPerPage);
+        if (currentPage < totalPages) {
+            currentPage++;
+            paginateTable();
+        }
+    });
+
+    paginateTable();
     </script>
+
 
 </body>
 </html>

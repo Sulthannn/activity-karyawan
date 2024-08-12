@@ -1,22 +1,41 @@
 <?php
-    session_start();
-    if(!isset($_SESSION['username'])){
-    header("Location: Halaman_login.php");    
-    }
-    include 'koneksi.php';
+session_start();
+if (!isset($_SESSION['username'])) {
+    header("Location: Halaman_login.php");
+}
+include 'koneksi.php';
 
-    if (isset($_POST['tambah_user'])) {
-        if (tambah_user($_POST) > 0) {
-            echo "<script>
-                    alert('Role successfully added!');
-                    document.location.href = 'role.php';
+$nama = $_SESSION['nama'];
+$role = $_SESSION['role'];
+$image = $_SESSION['image'];
+
+if (isset($_POST['tambah_user'])) {
+    if (tambah_user($_POST) > 0) {
+        echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Role successfully added!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        document.location.href = 'role.php';
+                    });
+                }
                 </script>";
-        } else {
-            echo "<script>
-                    alert('Role failed to add!');
+    } else {
+        echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Role failed to add!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
                 </script>";
-        }
     }
+}
 ?>
 
 <!DOCTYPE html>
@@ -79,10 +98,11 @@
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
-                        <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
@@ -120,6 +140,9 @@
                     </li><br>
                     <li class="active nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
                     </li>
+                    <br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -146,6 +169,12 @@
                                 <div class="card-body">
                                     <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
                                         <div class="row">
+                                            <div class="col-6">
+                                                <div class="mb-1">
+                                                    <label for="image" class="form-label">Image</label>
+                                                    <input type="file" class="form-control" name="image" required />
+                                                </div>
+                                            </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
                                                     <label for="nup" class="form-label">NUP</label>
@@ -179,16 +208,6 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                <label for="role" class="form-label">Role</label>
-                                                    <select class="form-control" id="role" name="role" required >
-                                                        <option value="">-</option>
-                                                        <option value="User">User</option>
-                                                        <option value="Admin">Admin</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
                                                     <label for="password" class="form-label">Password</label>
                                                     <input type="password" class="form-control" name="password" id="password" placeholder="Password" required />
                                                 </div>
@@ -202,11 +221,11 @@
                                                         <option value="Non-active">Non-active</option>
                                                     </select>
                                             </div>
-                                            <div class="col-12">
-                                                <button type="submit" name="tambah_user" class="btn btn-primary_2 me-1">Save</button>
-                                                <a href="role.php" class="btn btn-outline-secondary">Back</a>
                                             </div>
-                                        </div>
+                                            <div class="col-12">
+                                                <a href="role.php" class="btn btn-outline-secondary">Back</a>
+                                                <button type="submit" name="tambah_user" class="btn btn-primary_2 me-1">Save</button>
+                                            </div>
                                     </form>
                                 </div>
                             </div>
@@ -235,7 +254,8 @@
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
-
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
         $(window).on('load', function() {
             if (feather) {
@@ -245,6 +265,53 @@
                 });
             }
         });
+
+        function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Final Check',
+                    text: "Have you finished all your work for today?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, I am done!',
+                    cancelButtonText: 'No, let me finish'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'logout.php';
+                    }
+                });
+            }
+        });
+    }
+
+        function confirmBreak() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will take a break!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, break!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'break.php';
+                }
+            });
+        }
     </script>
 
 </body>
