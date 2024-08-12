@@ -3,24 +3,44 @@ session_start();
 if (!isset($_SESSION['username'])) {
     header("location: Halaman_login.php");
     exit;
-    }
+}
 
-    $nama = $_SESSION['nama'];
-    $role = $_SESSION['role'];
+$nama = $_SESSION['nama'];
+$role = $_SESSION['role'];
+$image = $_SESSION['image'];
 
-    include("koneksi.php");
+include("koneksi.php");
 
-    $query = "
-    SELECT p.id, p.tanggal, p.time_login, p.time_logout, p.geotagging, 
-        u.nup, u.nama, u.divisi
-    FROM time p
-    JOIN users u ON p.user_id = u.id
-    WHERE u.status = 'active'
+$query = "
+SELECT p.id, p.tanggal, p.time_login, p.before_break, p.after_break, p.time_logout, p.geotagging, 
+    u.nup, u.nama, u.divisi
+FROM time p
+JOIN users u ON p.user_id = u.id
+WHERE u.status = 'active'
 ";
-    $result = mysqli_query($koneksi, $query);
 
-    $current_time = date('H:i:s');
+if (is_user()) {
+    $query .= " AND u.nama = '$nama'";
+}
+
+$result = mysqli_query($koneksi, $query);
+
+function is_superadmin() {
+    return $_SESSION['role'] === 'Super-Admin';
+}
+
+function is_admin() {
+    return $_SESSION['role'] === 'Admin';
+}
+
+function is_user() {
+    return $_SESSION['role'] === 'User';
+}
+
+date_default_timezone_set('Asia/Jakarta');
+$current_time = date('H:i:s');
 ?>
+
 
 <!DOCTYPE html>
 
@@ -43,6 +63,8 @@ if (!isset($_SESSION['username'])) {
 
     <!-- Favicons -->
     <link href="../../assets/img/logo.png" rel="icon">
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
 
     <!-- BEGIN: Theme CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap.css">
@@ -86,11 +108,13 @@ if (!isset($_SESSION['username'])) {
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
-                        <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
+                    
                 </li>
             </ul>
         </div>
@@ -125,8 +149,13 @@ if (!isset($_SESSION['username'])) {
                             </li>
                         </ul>
                     </li><br>
+                    <?php if (is_superadmin() || is_admin()): ?>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
                     </li>
+                    <br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -153,7 +182,7 @@ if (!isset($_SESSION['username'])) {
                                 <h4 class="card-title"></h4>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover-animation" style="min-width: 2000px;">
+                            <table class="table table-hover-animation" style="min-width: 2000px;">
                                     <thead>
                                         <tr style="text-align: center;">
                                             <th>No.</th>
@@ -162,40 +191,65 @@ if (!isset($_SESSION['username'])) {
                                             <th>Name</th>
                                             <th>Division</th>
                                             <th>Login Time</th>
+                                            <th>Before Break</th>
+                                            <th>After Break</th>
                                             <th>Logout Time</th>
                                             <th>Geotagging</th>
                                         </tr>
                                     </thead>
                                     <tbody style="text-align: center;">
-                                    <?php 
-                                        $i = 1;
-                                        if ($result->num_rows > 0) {
-                                            while ($row = $result->fetch_assoc()) {
-                                                $time_logout_display = $row['time_logout'] ? htmlspecialchars($row['time_logout']) : $current_time;
-                                    ?>
-                                        <tr>
-                                            <td><?php echo $i; ?></td>
-                                            <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
-                                            <td><?php echo htmlspecialchars($row['nup'] ?? ''); ?></td>
-                                            <td><?php echo htmlspecialchars($row['nama'] ?? ''); ?></td>
-                                            <td><?php echo htmlspecialchars($row['divisi'] ?? ''); ?></td>
-                                            <td><?php echo htmlspecialchars($row['time_login'] ?? ''); ?></td>
-                                            <td id="logout-time-<?php echo $row['id']; ?>" class="<?php echo $row['time_logout'] ? 'inactive' : 'active'; ?>">
-                                                <?php echo htmlspecialchars($time_logout_display); ?>
-                                            </td>
-                                            <td><?php echo htmlspecialchars($row['geotagging'] ?? ''); ?></td>
-                                        </tr>
-                                    <?php
-                                                $i++;
+                                        <?php 
+                                            $i = 1;
+                                            if ($result->num_rows > 0) {
+                                                while ($row = $result->fetch_assoc()) {
+                                                    $time_logout_display = $row['time_logout'] ? htmlspecialchars($row['time_logout']) : $current_time;
+                                                    $geotagging = htmlspecialchars($row['geotagging'] ?? '');
+                                                    $geotagging_array = explode(',', $geotagging);
+                                                    $latitude = $geotagging_array[0] ?? '';
+                                                    $longitude = $geotagging_array[1] ?? '';
+                                        ?>
+                                            <tr>
+                                                <td><?php echo $i; ?></td>
+                                                <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
+                                                <td><?php echo htmlspecialchars($row['nup'] ?? ''); ?></td>
+                                                <td><?php echo htmlspecialchars($row['nama'] ?? ''); ?></td>
+                                                <td><?php echo htmlspecialchars($row['divisi'] ?? ''); ?></td>
+                                                <td><?php echo htmlspecialchars($row['time_login'] ?? ''); ?></td>
+                                                <td><?php echo htmlspecialchars($row['before_break'] ?? ''); ?></td>
+                                                <td><?php echo htmlspecialchars($row['after_break'] ?? ''); ?></td>
+                                                <td id="logout-time-<?php echo $row['id']; ?>" class="<?php echo $row['time_logout'] ? 'inactive' : 'active'; ?>">
+                                                    <?php echo htmlspecialchars($time_logout_display); ?>
+                                                </td>
+                                                <td>
+                                                    <a href='#' class='geotagging-link' data-bs-toggle='modal' data-bs-target='#mapModal' data-lat='<?php echo $latitude; ?>' data-lng='<?php echo $longitude; ?>' style='margin-left: 10px;'>
+                                                        <i class='fa fa-map-location'></i> 
+                                                    </a>
+                                                </td>
+                                            </tr>
+                                        <?php
+                                                    $i++;
+                                                }
                                             }
-                                        }
-                                    ?>
+                                        ?>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
                     </div>
                 </div>
+                    <div class="modal fade" id="mapModal" tabindex="-1" aria-labelledby="mapModalLabel" aria-hidden="true">
+                        <div class="modal-dialog modal-lg">
+                            <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title" id="mapModalLabel">Map</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <div id="map" style="height: 500px;"></div>
+                            </div>
+                            </div>
+                        </div>
+                    </div>
             </div>
         </div>
     </div>
@@ -219,7 +273,11 @@ if (!isset($_SESSION['username'])) {
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
+
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+    <script src="https://kit.fontawesome.com/9273de0686.js" crossorigin="anonymous"></script>   
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 
     <script>
@@ -232,6 +290,7 @@ if (!isset($_SESSION['username'])) {
             }
         })
 
+        //Time
         function formatTime(date) {
             let hours = date.getHours();
             let minutes = date.getMinutes();
@@ -254,9 +313,9 @@ if (!isset($_SESSION['username'])) {
         updateLogoutTimes();
         setInterval(updateLogoutTimes, 1000);
 
-        // Memeriksa apakah browser mendukung Geolocation API
+        //Geotagging
         if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(success, error);
+            navigator.geolocation.getCurrentPosition(success, error,  { enableHighAccuracy: true });
         } else {
             alert("Geolocation tidak didukung oleh browser ini.");
         }
@@ -304,6 +363,88 @@ if (!isset($_SESSION['username'])) {
         $(document).ready(function() {
             getGeotaggingData();
         });
+
+        // Map
+        $(document).ready(function() {
+            var map;
+            var marker;
+            $('#mapModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget);
+                var lat = button.data('lat');
+                var lng = button.data('lng');
+                
+                setTimeout(function() {
+                    if (map) {
+                        map.remove();
+                    }
+                    map = L.map('map').setView([lat, lng], 15);
+
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        maxZoom: 19,
+                    }).addTo(map);
+
+                    marker = L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Coordinates: ' + lat + ', ' + lng)
+                        .openPopup()
+
+                    .addTo(map);
+
+                    var distance = map.distance([lat, lng]);
+                    $(`.geotagging-link[data-lat='${lat}'][data-lng='${lng}']`).closest('td').html(`
+                        <a href="#" class="geotagging-link" data-bs-toggle="modal" data-bs-target="#mapModal" data-lat="${lat}" data-lng="${lng}" style="margin-left: 10px;">
+                            <i class="fa fa-map-location"></i>
+                        </a>
+                    `);
+                }, 300);
+            });
+        });
+
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will be logged out!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, logout!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Final Check',
+                        text: "Have you finished all your work for today?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, I am done!',
+                        cancelButtonText: 'No, let me finish'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = 'logout.php';
+                        }
+                    });
+                }
+            });
+        }
+
+        function confirmBreak() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will take a break!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, break!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'break.php';
+                }
+            });
+        }
     </script>
 
 </body>

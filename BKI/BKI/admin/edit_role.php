@@ -7,6 +7,10 @@
 
     include("koneksi.php");
 
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
+    $image = $_SESSION['image'];
+
     if (isset($_GET['id'])) {
         $id = $_GET['id'];
         $stmt = $koneksi->prepare("SELECT * FROM users WHERE id = ?");
@@ -25,12 +29,27 @@
 
         if (update_user($_POST, $password) > 0) {
             echo "<script>
-                    alert('Role successfully updated!');
+            window.onload = function() {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Role successfully updated!',
+                    showConfirmButton: false,
+                    timer: 1500
+                }).then(() => {
                     document.location.href = 'role.php';
-                </script>";
+                });
+            }
+            </script>";
         } else {
             echo "<script>
-                    alert('Role failed to update!');
+                    window.onload = function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Role failed to add!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
                 </script>";
         }
     }
@@ -72,6 +91,8 @@
     <link rel="stylesheet" type="text/css" href="../../../assets/css/style.css">
     <!-- END: Custom CSS-->
 
+    <link rel="stylesheet" href="sweetalert2.min.css">
+
     <style>
         .btn-info {
             background: linear-gradient(135deg, #FFDA78, #FF7F3E);
@@ -96,10 +117,11 @@
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
-                        <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
@@ -137,6 +159,9 @@
                     </li><br>
                     <li class="active nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
                     </li>
+                    <br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    </li>
                 </ul>
             </div>
         </div>
@@ -164,6 +189,13 @@
                                     <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
                                         <input type="hidden" name="id" value="<?=$row['id'] ?>" />
                                         <div class="row">
+                                        <div class="col-6">
+                                            <div class="mb-1">
+                                                <label for="image" class="form-label">Image</label>
+                                                <input type="file" class="form-control" name="image" id="image" onchange="previewImage(event)" />
+                                                <img id="currentImage" src="img/<?= $row['image'] ?>" alt="Current Image" height="100" />
+                                            </div>
+                                        </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
                                                     <label for="nup" class="form-label">NUP</label>
@@ -222,8 +254,8 @@
                                                 </div>
                                             </div>
                                             <div class="col-12">
-                                                <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
                                                 <a href="role.php" class="btn btn-outline-secondary">Back</a>
+                                                <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
                                             </div>
                                         </div>
                                     </form>
@@ -258,6 +290,8 @@
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script>
         $(window).on('load', function() {
             if (feather) {
@@ -267,6 +301,62 @@
                 });
             }
         })
+
+        function previewImage(event) {
+        var reader = new FileReader();
+        reader.onload = function(){
+            var output = document.getElementById('currentImage');
+            output.src = reader.result;
+        };
+        reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will be logged out!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, logout!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    Swal.fire({
+                        title: 'Final Check',
+                        text: "Have you finished all your work for today?",
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Yes, I am done!',
+                        cancelButtonText: 'No, let me finish'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = 'logout.php';
+                        }
+                    });
+                }
+            });
+        }
+
+        function confirmBreak() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will take a break!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, break!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'break.php';
+                }
+            });
+        }
     </script>
 
 </body>

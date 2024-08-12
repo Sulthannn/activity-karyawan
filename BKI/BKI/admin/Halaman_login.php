@@ -106,9 +106,6 @@ $error = isset($_GET['error']) ? $_GET['error'] : '';
                                     </center>
                                 </form>
                             </div>
-                            <!-- <div class="container-fluid">
-                                <h5 style="text-align: right; margin-top: 20px; font-size: 10px;">* login khusus admin</h5>
-                            </div> -->
                         </div>
                     </div>
                 </div>                    

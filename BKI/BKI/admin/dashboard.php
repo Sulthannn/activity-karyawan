@@ -1,7 +1,7 @@
 <?php
     session_start();
     if(!isset($_SESSION['username'])){
-        header("location: Halaman_login.php");    
+        header("Location: Halaman_login.php");      
     }
 
     include("koneksi.php");
@@ -17,12 +17,11 @@
     JOIN users u ON p.user_id = u.id
     WHERE u.status = 'active'
     ";
-    
+
     $result = mysqli_query($koneksi, $query);
 
     date_default_timezone_set('Asia/Jakarta');
     $current_time = date('H:i:s');
-?>
 ?>
 
 <!DOCTYPE html>
@@ -69,6 +68,7 @@
 
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
@@ -108,6 +108,9 @@
                             </li>
                         </ul>
                     </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role">Role</span></a>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback">Feedback</span></a>
@@ -156,7 +159,7 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <?php if (isset($_SESSION['telat']) && $_SESSION['telat'] === true): ?>
-    
+
     <script>
         Swal.fire({
             title: 'Warning',
@@ -180,6 +183,53 @@
             }
         })
         
+    function confirmLogout() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will be logged out!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, logout!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'Final Check',
+                    text: "Have you finished all your work for today?",
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, I am done!',
+                    cancelButtonText: 'No, let me finish'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'logout.php';
+                    }
+                });
+            }
+        });
+    }
+
+    function confirmBreak() {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You will take a break!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, break!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                window.location.href = 'break.php';
+            }
+        });
+    }
+
         function confirmLogout() {
             Swal.fire({
                 title: 'Are you sure?',
@@ -226,6 +276,7 @@
                 }
             });
         }
+
     </script>
     
 </body>
