@@ -4,7 +4,7 @@ include("koneksi.php");
 
 date_default_timezone_set('Asia/Jakarta');
 
-if (isset($_SESSION['user_id'])) {
+if (isset($_SESSION['user_id']) && $_SESSION['role'] === 'User') {
     $user_id = $_SESSION['user_id'];
     $tanggal = date('Y-m-d');
     $current_time = date('H:i:s');
@@ -25,9 +25,9 @@ if (isset($_SESSION['user_id'])) {
         $insert_query = "INSERT INTO time (tanggal, user_id, time_login, before_break, after_break, time_logout, geotagging, is_break) VALUES ('$tanggal', $user_id, '00:00:00', '$current_time', '00:00:00', '00:00:00', '', true)";
         mysqli_query($koneksi, $insert_query);
     }
-    
-    session_destroy();
-    header("Location: ../index.php");
-    exit;
 }
+
+session_destroy();
+header("Location: ../index.php");
+exit;
 ?>

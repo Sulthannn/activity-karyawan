@@ -18,10 +18,6 @@ function is_admin() {
     return $_SESSION['role'] === 'Admin';
 }
 
-function is_user() {
-    return $_SESSION['role'] === 'User';
-}
-
 // Delete user
 if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
     $id = intval($_GET['id']);
@@ -249,21 +245,21 @@ $result = mysqli_query($koneksi, $query);
                         <br>
                         <br>
                         <div class="card">
-                        <div class="card-header d-flex justify-content-between">
-    <div>
-        <label for="entriesSelect">Show</label>
-        <select id="entriesSelect" class="form-control" style="width: auto; display: inline-block;">
-            <option value="1">1</option>
-            <option value="3">3</option>
-            <option value="50">50</option>
-            <option value="100">100</option>
-        </select>
-        <label for="entriesSelect">entries</label>
-    </div>
-    <div>
-        <input type="text" id="searchInput" placeholder="Search..." class="form-control search-input" style="width: 220px;" onkeyup="searchTable()">
-    </div>
-</div>
+                            <div class="card-header d-flex justify-content-between">
+                                <div>
+                                    <label for="entriesSelect">Show</label>
+                                    <select id="entriesSelect" class="form-control" style="width: auto; display: inline-block;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <label for="entriesSelect">entries</label>
+                                </div>
+                                <div>
+                                    <input type="text" id="searchInput" placeholder="Search..." class="form-control search-input" style="width: 220px;" onkeyup="searchTable()">
+                                </div>
+                            </div>
                             <div class="table-responsive">
                                 <table class="table table-hover-animation" style="min-width: 1500px;">
                                     <thead>
@@ -276,7 +272,9 @@ $result = mysqli_query($koneksi, $query);
                                             <th>Username</th>
                                             <th>Role</th>
                                             <th>Status</th>
+                                            <?php if (is_superadmin()): ?>
                                             <th>Action</th>
+                                            <?php endif; ?>
                                         </tr>
                                     </thead>
                                     <tbody id="tableBody" style="text-align: center;">
@@ -308,17 +306,15 @@ $result = mysqli_query($koneksi, $query);
                                                         }
                                                         ?>
                                                     </td>
-                                                    <td>
                                                     <?php if (is_superadmin()): ?>
+                                                    <td>
                                                         <a href="edit_role.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
                                                         <a href="#" class="btn btn-sm btn-warning" onclick="confirmChangeStatus(<?php echo $row['id']; ?>, '<?php echo strtolower($row['status']); ?>'); return false;">
                                                             Change Status
                                                         </a>
-                                                        <?php endif; ?>
-                                                        <?php if (is_superadmin() || is_admin()): ?>
                                                         <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
-                                                            <?php endif; ?>
                                                     </td>
+                                                    <?php endif; ?>
                                                 </tr>
                                                 <?php
                                                 $i++;
@@ -327,9 +323,6 @@ $result = mysqli_query($koneksi, $query);
                                         ?>
                                     </tbody>
                                 </table>
-                                <div id="tableFooter" class="d-flex justify-content-between">
-                                    <div id="entriesInfo"></div>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -488,73 +481,42 @@ $result = mysqli_query($koneksi, $query);
                     }
                 }
             }
-            updateTableEntries();
         }
 
-        let currentPage = 1;
-    let entriesPerPage = parseInt(document.getElementById('entriesSelect').value);
+    document.addEventListener('DOMContentLoaded', function() {
+        const entriesSelect = document.getElementById('entriesSelect');
+        const table = document.querySelector('.table-hover-animation');
+        const rows = table.getElementsByTagName('tr');
+        const info = document.createElement('div');
+        info.style.marginTop = '15px';
+        info.style.marginLeft = '20px';
+        table.parentNode.insertBefore(info, table.nextSibling);
 
-    function paginateTable() {
-        const table = document.querySelector(".table-hover-animation");
-        const tr = table.getElementsByTagName("tr");
-        const totalEntries = tr.length - 1; 
-        const totalPages = Math.ceil(totalEntries / entriesPerPage);
+    function updateTable() {
+            const entries = parseInt(entriesSelect.value);
+            let count = 0;
+            let totalEntries = rows.length - 1;
 
-        for (let i = 1; i < tr.length; i++) {
-            tr[i].style.display = "none";
+            for (let i = 1; i < rows.length; i++) {
+                if (count < entries) {
+                    rows[i].style.display = '';
+                    count++;
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+
+            let start = totalEntries > 0 ? 1 : 0;
+            let end = Math.min(entries, totalEntries);
+            info.textContent = `Showing ${start} to ${end} of ${totalEntries} entries`;
         }
-        const start = (currentPage - 1) * entriesPerPage + 1;
-        const end = Math.min(start + entriesPerPage - 1, totalEntries);
-        for (let i = start; i <= end; i++) {
-            tr[i].style.display = "";
-        }
 
-        document.getElementById('pageInfo').textContent = `Page ${currentPage} of ${totalPages}`;
+        entriesSelect.addEventListener('change', updateTable);
 
-        document.getElementById('prevPage').disabled = currentPage === 1;
-        document.getElementById('nextPage').disabled = currentPage === totalPages;
-
-        updateTableEntries();
-    }
-
-    function updateTableEntries() {
-        const table = document.querySelector(".table-hover-animation");
-        const tr = table.getElementsByTagName("tr");
-        const totalEntries = tr.length - 1;
-        const showingEntries = Math.min(entriesPerPage, totalEntries - (currentPage - 1) * entriesPerPage);
-
-        const startEntry = totalEntries > 0 ? (currentPage - 1) * entriesPerPage + 1 : 0;
-        const endEntry = startEntry + showingEntries - 1;
-
-        document.getElementById('entriesInfo').textContent = `Showing ${startEntry} to ${endEntry} of ${totalEntries} entries`;
-    }
-
-    document.getElementById('entriesSelect').addEventListener('change', function() {
-        entriesPerPage = parseInt(this.value);
-        currentPage = 1; 
-        paginateTable();
+        // Initial call to set the table based on the default value
+        updateTable();
     });
-
-    document.getElementById('prevPage').addEventListener('click', function() {
-        if (currentPage > 1) {
-            currentPage--;
-            paginateTable();
-        }
-    });
-
-    document.getElementById('nextPage').addEventListener('click', function() {
-        const table = document.querySelector(".table-hover-animation");
-        const totalEntries = table.getElementsByTagName("tr").length - 1;
-        const totalPages = Math.ceil(totalEntries / entriesPerPage);
-        if (currentPage < totalPages) {
-            currentPage++;
-            paginateTable();
-        }
-    });
-
-    paginateTable();
     </script>
-
 
 </body>
 </html>
