@@ -18,13 +18,33 @@
         $result = feedback($data);
 
             if ($result > 0) {
-                echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'index.php';</script>";
+                echo "<script>
+                    window.onload = function() {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Feedback successfully sent!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            document.location.href = 'index.php';
+                        });
+                    }
+                    </script>";
             } else {
-                echo "<script>alert('Data gagal ditambahkan!');</script>";
+                echo "<script>
+                    window.onload = function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Feedback failed sent!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                    </script>";
                 error_log('Failed to insert feedback: ' . $koneksi->error);
             }
-        } else {
-            echo "<script>alert('Feedback function not found!');</script>";
+            } else {
+                echo "<script>alert('Feedback function not found!');</script>";
         }
     }
 ?>
@@ -35,7 +55,7 @@
 <head>
     <meta charset="utf-8">
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
-    <title>BKI Activity</title>
+    <title>BKI - Landing Page</title>
     <meta content="" name="description">
     <meta content="" name="keywords">
 
@@ -114,7 +134,7 @@
                     <i class="fa-solid fa-1"></i>
                 </div>
                     <h3>Click the 'Login' button in the side menu</h3>
-                <p>Find and click the "Login" button located in the side navigation menu. This will take you to the login page.</p>
+                    <p>Find and click the "Login" button located in the side navigation menu. This will take you to the login page.</p>
                 </div>
             </div><!-- End Guide Item -->
 
@@ -122,13 +142,13 @@
                 <div class="guide-item item-teal position-relative">
                 <div class="icon">
                     <svg width="100" height="100" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,541.5067337569781C382.14930387511276,545.0595476570109,479.8736841581634,548.3450877840088,526.4010558755058,480.5488172755941C571.5218469581645,414.80211281144784,517.5187510058486,332.0715597781072,496.52539010469104,255.14436215662573C477.37192572678356,184.95920475031193,473.57363656557914,105.61284051026155,413.0603344069578,65.22779650032875C343.27470386102294,18.654635553484475,251.2091493199835,5.337323636656869,175.0934190732945,40.62881213300186C97.87086631185822,76.43348514350839,51.98124368387456,156.15599469081315,36.44837278890362,239.84606092416172C21.716077023791087,319.22268207091537,43.775223500013084,401.1760424656574,96.891909868211,461.97329694683043C147.22146801428983,519.5804099606455,223.5754009179313,538.201503339737,300,541.5067337569781"></path>
+                        <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,541.5067337569781C382.14930387511276,545.0595476570109,479.8736841581634,548.3450877840088,526.4010558755058,480.5488172755941C571.5218469581645,414.80211281144784,517.5187510058486,332.0715597781072,496.52539010469104,255.14436215662573C477.37192572678356,184.95920475031193,473.57363656557914,105.61284051026155,413.0603344069578,65.22779650032875C343.27470386102294,18.654635553484475,251.2091493199835,5.337323636656869,175.0934190732945,40.62881213300186C97.87086631185822,76.43348514350839,51.98124368387456,156.15599469081315,36.44837278890362,239.84606092416172C21.716077023791087,319.22268207091537,43.775223500013084,401.1760424656574,96.891909868211,461.97329694683043C147.22146801428983,519.5804099606455,223.5754009179313,538.201503339737,300,541.5067337569781"></path>
                     </svg>
                     <i class="fa-solid fa-2"></i>
                 </div>
                     <h3>Enter Username and Password</h3>
                 </a>
-                <p>Enter your username and password in the columns provided, then click the "Login" button to enter attendance.</p>
+                    <p>Enter your username and password in the columns provided, then click the "Login" button to enter attendance.</p>
                 </div>
             </div><!-- End Guide Item -->
 
@@ -136,13 +156,15 @@
                 <div class="guide-item item-red position-relative">
                 <div class="icon">
                     <svg width="100" height="100" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,503.46388370962813C374.79870501325706,506.71871716319447,464.8034551963731,527.1746412648533,510.4981551193396,467.86667711651364C555.9287308511215,408.9015244558933,512.6030010748507,327.5744911775523,490.211057578863,256.5855673507754C471.097692560561,195.9906835881958,447.69079081568157,138.11976852964426,395.19560036434837,102.3242989838813C329.3053358748298,57.3949838291264,248.02791733380457,8.279543830951368,175.87071277845988,42.242879143198664C103.41431057327972,76.34704239035025,93.79494320519305,170.9812938413882,81.28167332365135,250.07896920659033C70.17666984294237,320.27484674793965,64.84698225790005,396.69656628748305,111.28512138212992,450.4950937839243C156.20124167950087,502.5303643271138,231.32542653798444,500.4755392045468,300,503.46388370962813"></path>
+                        <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,503.46388370962813C374.79870501325706,506.71871716319447,464.8034551963731,527.1746412648533,510.4981551193396,467.86667711651364C555.9287308511215,408.9015244558933,512.6030010748507,327.5744911775523,490.211057578863,256.5855673507754C471.097692560561,195.9906835881958,447.69079081568157,138.11976852964426,395.19560036434837,102.3242989838813C329.3053358748298,57.3949838291264,248.02791733380457,8.279543830951368,175.87071277845988,42.242879143198664C103.41431057327972,76.34704239035025,93.79494320519305,170.9812938413882,81.28167332365135,250.07896920659033C70.17666984294237,320.27484674793965,64.84698225790005,396.69656628748305,111.28512138212992,450.4950937839243C156.20124167950087,502.5303643271138,231.32542653798444,500.4755392045468,300,503.46388370962813"></path>
                     </svg>
                     <i class="fa-solid fa-3"></i>
                 </div>
                     <h3>Auto Saved Login Time</h3>
                 </a>
+                
                 <p>After successfully logging in, your entry time will be automatically recorded by the system as a sign of attendance.</p>
+                
                 </div>
             </div><!-- End Guide Item -->
 
@@ -150,12 +172,12 @@
                 <div class="guide-item item-indigo position-relative">
                 <div class="icon">
                     <svg width="100" height="100" viewBox="0 0 600 600" xmlns="http://www.w3.org/2000/svg">
-                    <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,532.3542879108572C369.38199826031484,532.3153073249985,429.10787420159085,491.63046689027357,474.5244479745417,439.17860296908856C522.8885846962883,383.3225815378663,569.1668002868075,314.3205725914397,550.7432151929288,242.7694973846089C532.6665558377875,172.5657663291529,456.2379748765914,142.6223662098291,390.3689995646985,112.34683881706744C326.66090330228417,83.06452184765237,258.84405631176094,53.51806209861945,193.32584062364296,78.48882559362697C121.61183558270385,105.82097193414197,62.805066853699245,167.19869350419734,48.57481801355237,242.6138429142374C34.843463184063346,315.3850353017275,76.69343916112496,383.4422959591041,125.22947124332185,439.3748458443577C170.7312796277747,491.8107796887764,230.57421082200815,532.3932930995766,300,532.3542879108572"></path>
+                        <path stroke="none" stroke-width="0" fill="#f5f5f5" d="M300,532.3542879108572C369.38199826031484,532.3153073249985,429.10787420159085,491.63046689027357,474.5244479745417,439.17860296908856C522.8885846962883,383.3225815378663,569.1668002868075,314.3205725914397,550.7432151929288,242.7694973846089C532.6665558377875,172.5657663291529,456.2379748765914,142.6223662098291,390.3689995646985,112.34683881706744C326.66090330228417,83.06452184765237,258.84405631176094,53.51806209861945,193.32584062364296,78.48882559362697C121.61183558270385,105.82097193414197,62.805066853699245,167.19869350419734,48.57481801355237,242.6138429142374C34.843463184063346,315.3850353017275,76.69343916112496,383.4422959591041,125.22947124332185,439.3748458443577C170.7312796277747,491.8107796887764,230.57421082200815,532.3932930995766,300,532.3542879108572"></path>
                     </svg>
                     <i class="fa-solid fa-4"></i>
                 </div>
                     <h3>Logout to Record Home Time</h3>
-                <p>Once you are done working, click the "Logout" button available on the profile icon. Your logout time will be automatically recorded by the system</p>
+                    <p>Once you are done working, click the "Logout" button available on the profile icon. Your logout time will be automatically recorded by the system</p>
                 </div>
             </div>
             </div><!-- End Guide Item -->
@@ -164,8 +186,8 @@
     </main>
 
     <footer id="footer" class="footer feedback section-2 position-relative light-background">
-        <div class="container aos-init aos-animate" data-aos="fade" data-aos-delay="100">
-            <div class="row gy-4">
+        <div class="container aos-init aos-animate">
+            <div class="row gy-4"  data-aos="fade-up" data-aos-delay="200">
                 <div class="col-lg-6">
                     <h3 class="sitename">BKI ACTIVITY</h3>
                     <p class="text-start">If you run into any issues or have further questions, please feel free to send a feedback form or contact IT team. Good luck!</p>
@@ -191,8 +213,7 @@
                         <div class="container section-title aos-init aos-animate" data-aos="fade-up" style="margin-bottom: 5px; padding-bottom: 5px;">
                             <h2>Feedback</h2>
                         </div>
-                        
-                        <form action="" method="POST" data-aos="fade-up" data-aos-delay="200">
+                        <form action="" method="POST">
                             <div class="row gy-4">
                                 <div class="col-md-6 php-email-form">
                                     <input type="text" name="name" class="form-control" placeholder="Your Name" required>
@@ -207,7 +228,7 @@
                                     <textarea name="message" class="form-control" placeholder="Message" rows="6" required></textarea>
                                 </div>
                                 <div class="col-md-12 text-center php-email-form">
-                                    <button type="submit" class="btn btn-primary">Send</button>
+                                    <button type="submit" name="feedback" class="btn btn-primary_2 me-1">Send</button>
                                 </div>
                             </div>
                         </form>
@@ -249,6 +270,8 @@
 
     <!-- Main JS File -->
     <script src="../../assets/js/main.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 </body>
 </html>
