@@ -5,6 +5,9 @@
         exit;
     }
 
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
+
     require 'koneksi.php';
 
     $id    = $_GET['id'];
@@ -20,8 +23,8 @@
     $row    = mysqli_fetch_assoc($result);
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $tanggal   = htmlspecialchars($_POST['tanggal']);
-        $user_id   = htmlspecialchars($_POST['user_id']);
+        $tanggal = htmlspecialchars($_POST['tanggal']);
+        $user_id = htmlspecialchars($_POST['user_id']);
         $deskripsi = htmlspecialchars($_POST['deskripsi']);
         $time_upload_avident = htmlspecialchars($_POST['time_upload_avident']);
 
@@ -32,7 +35,7 @@
             $tmp_name = $_FILES['gambar']['tmp_name'][$key];
             
             if (!empty($tmp_name)) {
-                $file_name   = time() . '_' . basename($name);
+                $file_name = time() . '_' . basename($name);
                 $target_file = $upload_dir . $file_name;
             
                 $check = getimagesize($tmp_name);
@@ -58,26 +61,43 @@
         
         $data = [
             'id' => $id,
-            'tanggal'   => $tanggal,
-            'user_id'   => $user_id,
-            'gambar'    => $gambar,
-            'time_upload_avident' => $time_upload_avident,
+            'gambar' => $gambar,
+            'tanggal' => $tanggal,
+            'user_id' => $user_id,
             'deskripsi' => $deskripsi,
-            'time_upload_activity_planning' => $row['time_upload_activity_planning'],
-            'history_update' => $row['history_update'],
-            'status'    => $row['status']
+            'time_upload_avident' => $time_upload_avident,
         ];
 
         if (update_planning($data) > 0) {
             foreach ($images_to_delete as $image) {
                 $file_path = 'img/' . $image;
-                if (file_exists($file_path)) {
+                if (file_exists($file_path) && !is_dir($file_path)) {
                     unlink($file_path);
                 }
             }
-            echo "<script>alert('Data berhasil diupdate!'); window.location.href = 'avident.php';</script>";
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Planning successfully updated!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        window.location.href = 'avident.php';
+                    });
+                });
+            </script>";
         } else {
-            echo "<script>alert('Data gagal diupdate!');</script>";
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Planning failed to update!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                });
+            </script>";
         }
     }
 ?>
@@ -179,9 +199,9 @@
             </div>
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a><a class="dropdown-item" href="break.php"><i class="me-50" data-feather="battery-charging"></i> Break</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -218,6 +238,8 @@
                         </ul>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     </li>
                 </ul>
             </div>
@@ -264,9 +286,10 @@
                                                         }
                                                         ?>
                                                         </select>
-                                                    <div></div>
-                                                        <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
-                                                    </div>
+                                                </div>
+                                                <div>
+                                                    <input type="hidden" name="user_id" value="<?php echo $row['user_id']; ?>">
+                                                </div>
                                                 </div>
                                                 <div class="col-6">
                                                     <div class="mb-1">
@@ -302,8 +325,8 @@
                                                 <br>
                                             
                                                 <div class="col-12">
-                                                    <button type="submit" name="update" class="btn btn-primary_2 me-1">Save</button>
                                                     <a href="avident.php" class="btn btn-outline-secondary">Back</a>
+                                                    <button type="submit" name="update_planning" class="btn btn-primary_2 me-1">Save</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -336,6 +359,8 @@
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
+
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(window).on('load', function() {

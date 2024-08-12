@@ -5,6 +5,9 @@
         exit;
     }
 
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
+
     require 'koneksi.php';
 
     $result = mysqli_query($koneksi, "SELECT id, nup, nama, divisi FROM users WHERE status = 'Active'");
@@ -42,13 +45,32 @@
         'history_update' => $history_update
     ];
 
-    $result = tambah_planning($data);
-    
-    if ($result > 0) {
-        echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'planning.php';</script>";
-    } else {
-        echo "<script>alert('Data gagal ditambahkan!');</script>";
-        error_log('Failed to insert planning: ' . $koneksi->error);
+    if (isset($_POST['tambah_planning'])) {
+        if (tambah_planning($data) > 0) {
+            echo "<script>
+                    window.onload = function() {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Planning successfully added!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        }).then(() => {
+                            document.location.href = 'planning.php';
+                        });
+                    }
+                    </script>";
+        } else {
+            echo "<script>
+                    window.onload = function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Planning failed to add!',
+                            showConfirmButton: false,
+                            timer: 1500
+                        });
+                    }
+                    </script>";
+        }
     }
 }
 ?>
@@ -66,6 +88,8 @@
     <meta name="author" content="PIXINVENT">
     <title>BKI - Planning</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
 
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/vendors/css/vendors.min.css">
@@ -93,6 +117,26 @@
             padding: 12px 24px;
             text-decoration: none;
         }
+        .select2-container--default.select2-container--open .select2-selection--single {
+            border-color: #003285 !important;
+        }
+        .select2-container--default .select2-selection--single {
+            border-color: #CED4DA;
+            transition: border-color 0.1s ease;
+        }
+        .select2-container--default .select2-selection--single.item-selected {
+            border-color: #003285 !important;
+        }
+        .select2-container--default .select2-results__option--highlighted {
+            background-color: #FF7F3E !important;
+            color: #ffffff !important;
+        }
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            color: #333333;
+        }
+        .select2-container--default .select2-results__option[aria-selected="true"] {
+            background: linear-gradient(135deg, #FFDA78, #FF7F3E);
+        }
     </style>
 </head>
 
@@ -108,9 +152,9 @@
             </div>
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a><a class="dropdown-item" href="break.php"><i class="me-50" data-feather="battery-charging"></i> Break</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -147,6 +191,8 @@
                         </ul>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     </li>
                 </ul>
             </div>
@@ -182,7 +228,7 @@
                                                 </div>
                                                 <div class="mb-1">
                                                     <label for="user_id" class="form-label">User</label>
-                                                    <select class="form-control" id="user_id" name="user_id" readonly >
+                                                    <select class="form-control" id="user_id" name="user_id" >
                                                         <option value="">Select User</option>
                                                         <?php while ($row = mysqli_fetch_assoc($result)): ?>
                                                             <option value="<?= $row['id'] ?>"><?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)</option>
@@ -214,8 +260,8 @@
                                                     <input type="hidden" id="history_update" name="history_update" />
                                                 </div>
                                                 <div class="col-12">
-                                                    <button type="submit" class="btn btn-primary_2 me-1">Save</button>
                                                     <a href="planning.php" class="btn btn-outline-secondary">Back</a>
+                                                    <button type="submit" name="tambah_planning" class="btn btn-primary_2 me-1">Save</button>
                                                 </div>
                                             </div>
                                         </form>
@@ -249,10 +295,9 @@
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
-    <!-- BEGIN: Theme JS -->
-    <script src="../../../app-assets/js/core/app-menu.js"></script>
-    <script src="../../../app-assets/js/core/app.js"></script>
-    <!-- END: Theme JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.10/js/select2.min.js"></script>
 
     <script>
         $(window).on('load', function() {
@@ -273,6 +318,44 @@
             
             document.getElementById('time_upload_activity_planning').value = timeStamp;
         });
+
+        $(document).ready(function() {
+            $('#user_id').select2({
+                placeholder: 'Pilih User',
+                dropdownParent: $('body'),
+                minimumInputLength: 1,
+                width: '100%'
+            });
+
+            // A-Z
+            function sortSelectOptions() {
+                var $select = $('#user_id');
+                var $options = $select.find('option');
+
+                // Urutkan opsi berdasarkan teks
+                $options.sort(function(a, b) {
+                    return $(a).text().localeCompare($(b).text());
+                });
+
+                $select.empty().append($options);
+            }
+
+            sortSelectOptions();
+
+        $('#user_id').on('select2:select', function() {
+            $('.select2-selection--single').addClass('item-selected');
+        });
+
+        $(document).on('click', function(e) {
+            if (!$(e.target).closest('.select2-container').length) {
+                $('.select2-selection--single').removeClass('item-selected');
+            }
+        });
+
+        $('#user_id').on('select2:open', function() {
+            $('.select2-selection--single').removeClass('item-selected');
+        });
+    });
     </script>
 
 </body>

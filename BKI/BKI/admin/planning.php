@@ -5,6 +5,9 @@
         exit;
     }
 
+    $nama  = $_SESSION['nama'];
+    $role  = $_SESSION['role'];
+
     require 'koneksi.php';
 
     $result = mysqli_query($koneksi, "SELECT id, nup, nama, divisi FROM users WHERE status = 'Active'");
@@ -24,31 +27,48 @@
     } else {
         $status = 'On-progress';
     }
-
-    $data = [
-        'tanggal'        => $tanggal,
-        'user_id'        => $user_id,
-        'deskripsi'      => $deskripsi,
-        'gambar'         => $gambar,
-        'time_upload_activity_planning' => $time_upload_activity_planning,
-        'status'         => $status,
-        'history_update' => $history_update
-    ];
-
-    if (tambah_planning($data) > 0) {
-        echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'planning.php';</script>";
-    } else {
-        echo "<script>alert('Data gagal ditambahkan!');</script>";
-    }
 }
+
+    // Switch Alert - Delete
+    if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
+        $id = intval($_GET['id']);
+        $result = hapus_planning($id);
+        if ($result > 0) {
+            echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Planning successfully deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        document.location.href = 'planning.php';
+                    });
+                }
+                </script>";
+        } else {
+            echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Planning failed to deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            </script>";
+        }
+    }
 
     $query = "
         SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.status, p.gambar, p.history_update,
             u.nup, u.nama, u.divisi
         FROM planning p
         JOIN users u ON p.user_id = u.id
-        WHERE u.status = 'active'
+        WHERE u.status = 'Active'
+        ORDER BY p.status DESC, p.time_upload_avident ASC
     ";
+
     $result = mysqli_query($koneksi, $query);
 ?>
 
@@ -119,9 +139,9 @@
             </div>
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a><a class="dropdown-item" href="break.php"><i class="me-50" data-feather="battery-charging"></i> Break</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -158,6 +178,8 @@
                         </ul>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     </li>
                 </ul>
             </div>
@@ -193,19 +215,20 @@
                             </div>
                             <div class="table-responsive">
                                 <table class="table table-hover-animation" style="min-width: 2000px;"> <!-- style="min-width: 250px;" -->
+                                    <!-- <div class="..."> -->
                                         <thead>
                                             <tr style="text-align: center;">
                                                 <th>No.</th>
                                                 <th style="min-width: 150px;">Date</th>
-                                                <th>NUP</th>
-                                                <th style="min-width: 250px;">Name</th>
-                                                <th>Division</th>
+                                                <th style="min-width: 150px;">NUP</th>
+                                                <th style="min-width: 350px;">Name</th>
+                                                <th style="min-width: 150px;">Division</th>
                                                 <th style="min-width: 500px;">Description</th>
                                                 <th style="min-width: 150px;">Upload Time</th>
                                                 <th style="min-width: 250px;">Gambar</th>
-                                                <th>Status</th>
-                                                <th>History</th>
-                                                <th>Action</th>
+                                                <th style="min-width: 150px;">Status</th>
+                                                <th style="min-width: 150px;">History</th>
+                                                <th style="min-width: 250px;">Action</th>
                                             </tr>
                                         </thead>
                                         <tbody style="text-align: center;">
@@ -220,7 +243,7 @@
                                                 <td><?php echo $row['nup']; ?></td>
                                                 <td><?php echo $row['nama']; ?></td>
                                                 <td><?php echo $row['divisi']; ?></td>
-                                                <td style="text-align: justify;"><?php echo $row['deskripsi']; ?></td>
+                                                <td style="text-align: justify;"><?php $deskripsi = $row['deskripsi']; echo nl2br(htmlspecialchars($deskripsi)); ?></td>
                                                 <td><?php echo $row['time_upload_activity_planning']; ?></td>
                                                 <td>
                                                     <?php if (!empty($row['gambar'])): ?>
@@ -257,7 +280,7 @@
                                                 <td><?php echo $row['history_update']; ?></td>
                                                 <td>
                                                     <a href="edit_planning.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
-                                                    <a href="hapus_planning.php?id=<?php echo $row['id']; ?>" style="margin-top: 5px;" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus data <?php echo $row['nama']; ?> ?')">Delete</a>
+                                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
                                                 </td>
                                             </tr>
                                         <?php
@@ -296,6 +319,7 @@
     <!-- END: Theme JS-->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(window).on('load', function() {
@@ -306,6 +330,36 @@
                 });
             }
         })
+
+        function confirmDelete(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'This action cannot be undone!',
+                    text: "Deleting this planning will remove all associated data. Are you sure you want to proceed?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'planning.php?id=' + id + '&action=delete';
+                    }
+                });
+            }
+        });
+    }
     </script>
 
 </body>

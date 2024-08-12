@@ -1,3 +1,34 @@
+<?php
+    require 'admin/koneksi.php';
+
+    if ($_SERVER["REQUEST_METHOD"] == "POST") {
+        $name        = htmlspecialchars($_POST['name']);
+        $email       = htmlspecialchars($_POST['email']);
+        $subject     = htmlspecialchars($_POST['subject']);
+        $message     = htmlspecialchars($_POST['message']);
+        
+        $data = [
+            'name'   => $name,
+            'email'  => $email,
+            'subject' => $subject,
+            'message' => $message,
+        ];
+
+        if (function_exists('feedback')) {
+        $result = feedback($data);
+
+            if ($result > 0) {
+                echo "<script>alert('Data berhasil ditambahkan!'); window.location.href = 'index.php';</script>";
+            } else {
+                echo "<script>alert('Data gagal ditambahkan!');</script>";
+                error_log('Failed to insert feedback: ' . $koneksi->error);
+            }
+        } else {
+            echo "<script>alert('Feedback function not found!');</script>";
+        }
+    }
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -59,7 +90,7 @@
             </div>
         </div>
 
-        </section><!-- /Home Section -->
+        </section><!-- End Home Section -->
 
         <!-- Guide Section -->
         <section id="guide" class="guides section">
@@ -126,89 +157,74 @@
                     <h3>Logout to Record Home Time</h3>
                 <p>Once you are done working, click the "Logout" button available on the profile icon. Your logout time will be automatically recorded by the system</p>
                 </div>
-            </div><!-- End Guide Item -->
-
             </div>
-
+            </div><!-- End Guide Item -->
         </div>
-
-        </section><!-- /Guides Section -->
-
+        </section><!-- Guides Section -->
     </main>
 
     <footer id="footer" class="footer feedback section-2 position-relative light-background">
         <div class="container aos-init aos-animate" data-aos="fade" data-aos-delay="100">
-        <div class="row gy-4">
-    
-            <div class="col-lg-6">
-            <h3 class="sitename">BKI ACTIVITY</h3>
-            <p class="text-start">If you run into any issues or have further questions, please feel free to send a feedback form or contact IT team. Good luck!</p>
-            <div class="info-item d-flex aos-init aos-animate" data-aos="fade-up" data-aos-delay="200">
-                <i class="bi bi-geo-alt flex-shrink-0"></i>
-                <div class="text-start">
-                <h3>Address</h3>
-                <p class="fw-bold">PT Biro Klasifikasi Indonesia (Persero)</p>
-                <p>Jalan Yos Sudarso No.38-40, RT.04/RW.10 Kelurahan Kebon Bawang, Kecamatan Tanjung Priok Kota Jakarta Utara, DKI Jakarta 14320</p>
+            <div class="row gy-4">
+                <div class="col-lg-6">
+                    <h3 class="sitename">BKI ACTIVITY</h3>
+                    <p class="text-start">If you run into any issues or have further questions, please feel free to send a feedback form or contact IT team. Good luck!</p>
+                    <div class="info-item d-flex aos-init aos-animate" data-aos="fade-up" data-aos-delay="200">
+                        <i class="bi bi-geo-alt flex-shrink-0"></i>
+                        <div class="text-start">
+                            <h3>Address</h3>
+                            <p class="fw-bold">PT Biro Klasifikasi Indonesia (Persero)</p>
+                            <p>Jalan Yos Sudarso No.38-40, RT.04/RW.10 Kelurahan Kebon Bawang, Kecamatan Tanjung Priok Kota Jakarta Utara, DKI Jakarta 14320</p>
+                        </div>
+                    </div>
+                    <div class="info-item d-flex aos-init aos-animate" data-aos="fade-up" data-aos-delay="300">
+                        <i class="bi bi-telephone flex-shrink-0"></i>
+                        <div class="text-start">
+                            <h3>Telp</h3>
+                            <p>(+6221) 4300139</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-1">
+                    </div>
+                        <div class="col-lg-5" style="text-align: end;">
+                        <div class="container section-title aos-init aos-animate" data-aos="fade-up" style="margin-bottom: 5px; padding-bottom: 5px;">
+                            <h2>Feedback</h2>
+                        </div>
+                        
+                        <form action="" method="POST" data-aos="fade-up" data-aos-delay="200">
+                            <div class="row gy-4">
+                                <div class="col-md-6 php-email-form">
+                                    <input type="text" name="name" class="form-control" placeholder="Your Name" required>
+                                </div>
+                                <div class="col-md-6 php-email-form">
+                                    <input type="email" name="email" class="form-control" placeholder="Your Email" required>
+                                </div>
+                                <div class="col-md-12 php-email-form">
+                                    <input type="text" name="subject" class="form-control" placeholder="Subject" required>
+                                </div>
+                                <div class="col-md-12 php-email-form">
+                                    <textarea name="message" class="form-control" placeholder="Message" rows="6" required></textarea>
+                                </div>
+                                <div class="col-md-12 text-center php-email-form">
+                                    <button type="submit" class="btn btn-primary">Send</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="container mt-3">
+                        <div class="copyright">
+                            <div class="d-flex justify-content-center align-items-center mt-5">
+                                <img src="../../assets/img/idsurvey.png" class="img-fluid mx-1 footer-img-1">
+                                <img src="../../assets/img/logo.png" class="img-fluid mx-1 footer-img-2">
+                            </div>
+                            <div class="mt-4">
+                                <span>&copy;</span><strong class="px-1 sitename">Biro Klasifikasi Indonesia</strong><span>2024</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
-            <div class="info-item d-flex aos-init aos-animate" data-aos="fade-up" data-aos-delay="300">
-                <i class="bi bi-telephone flex-shrink-0"></i>
-                <div class="text-start">
-                <h3>Telp</h3>
-                <p>(+6221) 4300139</p>
-                </div>
-            </div>
-            </div>
-            <div class="col-lg-1">
-            </div>
-            <div class="col-lg-5" style="text-align: end;">
-            <div class="container section-title aos-init aos-animate" data-aos="fade-up" style="margin-bottom: 5px; padding-bottom: 5px;">
-                <h2>Feedback</h2>
-            </div>
-            <form action="forms/feedback.php" method="post" class="php-email-form aos-init aos-animate" data-aos="fade-up" data-aos-delay="200">
-                <div class="row gy-4">
-    
-                <div class="col-md-6">
-                    <input type="text" name="name" class="form-control" placeholder="Your Name" required="">
-                </div>
-    
-                <div class="col-md-6">
-                    <input type="email" class="form-control" name="email" placeholder="Your Email" required="">
-                </div>
-    
-                <div class="col-md-12">
-                    <input type="text" class="form-control" name="subject" placeholder="Subject" required="">
-                </div>
-    
-                <div class="col-md-12">
-                    <textarea class="form-control" name="message" rows="6" placeholder="Message" required=""></textarea>
-                </div>
-    
-                <div class="col-md-12 text-center">
-                    <div class="loading">Loading</div>
-                    <div class="error-message"></div>
-                    <div class="sent-message">Your message has been sent. Thank you!</div>
-    
-                    <button type="submit">Send</button>
-                </div>
-    
-                </div>
-            </form>
-            </div>
-    
-            <div class="container mt-3">
-            <div class="copyright">
-                <div class="d-flex justify-content-center align-items-center mt-5">
-                <img src="../../assets/img/idsurvey.png" class="img-fluid mx-1 footer-img-1">
-                <img src="../../assets/img/logo.png" class="img-fluid mx-1 footer-img-2">
-                </div>
-                <div class="mt-4">
-                <span>&copy;</span><strong class="px-1 sitename">Biro Klasifikasi Indonesia</strong><span>2024</span>
-                </div>
-            </div>
-            </div>
-    
-        </div>
         </div>
     </footer>
 
@@ -235,5 +251,4 @@
     <script src="../../assets/js/main.js"></script>
 
 </body>
-
 </html>
