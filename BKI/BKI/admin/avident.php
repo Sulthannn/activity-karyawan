@@ -5,10 +5,23 @@
         exit;
     }
 
-    $nama = $_SESSION['nama'];
-    $role = $_SESSION['role'];
+    $nama  = $_SESSION['nama'];
+    $role  = $_SESSION['role'];
+    $image = $_SESSION['image'];
 
     include("koneksi.php");
+
+    function is_superadmin() {
+        return $_SESSION['role'] === 'Super-Admin';
+    }
+    
+    function is_admin() {
+        return $_SESSION['role'] === 'Admin';
+    }
+    
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
 
     // Switch Alert - Delete
     if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
@@ -48,6 +61,11 @@
         JOIN users u ON p.user_id = u.id
         ORDER BY p.time_upload_avident ASC
     ";
+    
+    if (is_user()) {
+        $query .= " AND u.nama = '$nama'";
+    }
+
     $result = mysqli_query($koneksi, $query);
 ?>
 
@@ -118,10 +136,11 @@
             </div>
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a><a class="dropdown-item" href="break.php"><i class="me-50" data-feather="battery-charging"></i> Break</a>
-                        <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
@@ -156,10 +175,12 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    </li>
+                    <?php if (is_superadmin() || is_admin()): ?>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                        </li><br>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -200,7 +221,9 @@
                                             <th>Division</th>
                                             <th style="min-width: 250px;">Image</th>
                                             <th style="min-width: 150px;">Upload Time</th>
+                                            <?php if (is_superadmin() || is_user()): ?>
                                             <th>Action</th>
+                                            <?php endif; ?>
                                         </tr>
                                     </thead>
                                     <tbody style="text-align: center;">
@@ -254,10 +277,14 @@
                                                 <?php endif;
                                                     ?>
                                             </td>
+                                            <?php if (is_superadmin() || is_user()): ?>
                                             <td>
                                                 <a href="edit_avident.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Upload</a>
+                                                <?php if (is_superadmin()): ?>
                                                 <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
+                                                <?php endif; ?>
                                             </td>
+                                            <?php endif; ?>
                                         </tr>
                                         <?php } ?>
                                     </tbody>
@@ -329,6 +356,53 @@
             }
         });
     }
+
+        function confirmLogout() {
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: "You will be logged out!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, logout!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        Swal.fire({
+                            title: 'Final Check',
+                            text: "Have you finished all your work for today?",
+                            icon: 'question',
+                            showCancelButton: true,
+                            confirmButtonColor: '#3085d6',
+                            cancelButtonColor: '#d33',
+                            confirmButtonText: 'Yes, I am done!',
+                            cancelButtonText: 'No, let me finish'
+                        }).then((result) => {
+                            if (result.isConfirmed) {
+                                window.location.href = 'logout.php';
+                            }
+                        });
+                    }
+                });
+            }
+
+        function confirmBreak() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: "You will take a break!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#3085d6',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, break!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = 'break.php';
+                }
+            });
+        }
     </script>
 
 </body>
