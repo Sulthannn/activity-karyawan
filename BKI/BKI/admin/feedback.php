@@ -1,7 +1,7 @@
 <?php
     session_start();
     if (!isset($_SESSION['username'])) {
-        header("location: Halaman_login.php");    
+        header("location: Halaman_login.php");
         exit;
     }
 
@@ -10,47 +10,61 @@
 
     include("koneksi.php");
 
-    $id    = $_GET['id'];
     $query = "
-        SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.gambar,
-            u.id as user_id, u.nup, u.nama, u.divisi
-        FROM planning p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.id = '$id'
+        SELECT id, name, email, subject, message 
+        FROM feedback
+        ORDER BY id DESC
     ";
 
     $result = mysqli_query($koneksi, $query);
-    $row = mysqli_fetch_assoc($result);
 
-    $existing_time_upload_activity_planning = $row['time_upload_activity_planning'];
+    function mask_email($email) {
+        $email_parts = explode("@", $email);
+        $name_part = $email_parts[0];
+        $domain_part = $email_parts[1];
+        
+        if (strlen($name_part) > 2) {
+            $masked_name = substr($name_part, 0, 2) . str_repeat('*', strlen($name_part) - 2);
+        } else {
+            $masked_name = $name_part;
+        }
+        
+        return $masked_name . '@' . $domain_part;
+    }
 
-    if (isset($_POST['update_planning'])) {
-        if (update_planning($_POST) > 0) {
+    // Switch Alert - Delete
+    if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
+        $id = intval($_GET['id']);
+        $result = hapus_feedback($id);
+        if ($result > 0) {
             echo "<script>
-                    window.onload = function() {
-                        Swal.fire({
-                            icon: 'success',
-                            title: 'Planning successfully updated!',
-                            showConfirmButton: false,
-                            timer: 1500
-                        }).then(() => {
-                            document.location.href = 'planning.php';
-                        });
-                    }
-                    </script>";
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Feedback successfully deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        document.location.href = 'feedback.php';
+                    });
+                }
+                </script>";
         } else {
             echo "<script>
-                    window.onload = function() {
-                        Swal.fire({
-                            icon: 'error',
-                            title: 'Planning failed to update!',
-                            showConfirmButton: false,
-                            timer: 1500
-                        });
-                    }
-                    </script>";
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Feedback failed to deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            </script>";
         }
     }
+
+    $query  = "SELECT * FROM feedback";
+    $result = mysqli_query($koneksi, $query);
 ?>
 
 <!DOCTYPE html>
@@ -65,7 +79,7 @@
     <meta name="description" content="Vuexy admin is super flexible, powerful, clean &amp; modern responsive bootstrap 4 admin template with unlimited possibilities.">
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
-    <title>BKI - Edit Data</title>
+    <title>BKI - Feedback</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -77,8 +91,8 @@
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap-extended.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/colors.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/components.css">
-    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
-    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css">
+    <!-- <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
+    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css"> -->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/semi-dark-layout.css">
     <!-- END: Theme CSS-->
 
@@ -86,13 +100,12 @@
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/core/menu/menu-types/vertical-menu.css">
     <!-- END: Page CSS-->
 
-    <!-- BEGIN: Custom CSS-->
-    <link rel="stylesheet" type="text/css" href="../../../assets/css/style.css">
-    <!-- END: Custom CSS-->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
     <style>
-        .btn-info {
-            background: linear-gradient(135deg, #FFDA78, #FF7F3E);
+        .btn-primary {
+            background: linear-gradient(135deg, #AFC8AD, #88AB8E);
             color: #FFF;
             border: none;
             padding: 12px 24px;
@@ -122,7 +135,7 @@
             </ul>
         </div>
     </nav>
-    <!-- END: Header-->
+    <!-- END: Header-->
 
     <!-- BEGIN: Main Menu-->
     <div class="main-menu menu-fixed menu-dark menu-accordion menu-shadow" data-scroll-to-active="true">
@@ -145,7 +158,7 @@
                         <ul class="menu-content">
                             <li><a class="d-flex align-items-center" href="time.php"><i data-feather="circle"></i><span class="menu-item text-truncate" data-i18n="Employee Time">Time</span></a>
                             </li>
-                            <li class="active"><a class="d-flex align-items-center" href="planning.php"><i data-feather="circle"></i><span class="menu-item text-truncate" data-i18n="Planning">Planning</span></a>
+                            <li><a class="d-flex align-items-center" href="planning.php"><i data-feather="circle"></i><span class="menu-item text-truncate" data-i18n="Planning">Planning</span></a>
                             </li>
                             <li><a class="d-flex align-items-center" href="avident.php"><i data-feather="circle"></i><span class="menu-item text-truncate" data-i18n="Avident">Avident</span></a>
                             </li>
@@ -153,7 +166,7 @@
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    <li class="active nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     </li>
                 </ul>
             </div>
@@ -164,66 +177,60 @@
     <!-- BEGIN: Content-->
     <div class="app-content content ">
         <div class="content-overlay"></div>
-            <div class="header-navbar-shadow"></div>
-                <div class="content-wrapper container-xxl p-0">
-                    <div class="content-header row">
-                        <div class="content-header-left col-md-9 col-12 mb-2">
-                            <div class="row breadcrumbs-top">
-                                <h2 class="float-start mb-0">Edit - Form Planning</h2>
-                            </div>
+        <div class="header-navbar-shadow"></div>
+            <div class="content-wrapper container-xxl p-0">
+                <div class="content-header row">
+                    <div class="content-header-left col-md-9 col-12 mb-2">
+                        <div class="row breadcrumbs-top">
+                            <h2 class="float-start mb-0">Feedback</h2>
                         </div>
                     </div>
-                    <div class="content-body">
-                        <section id="basic-vertical-layouts">
-                            <div class="row">
-                                <div class="col-md-12 col-12">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <form action="" method="POST" class="form form-vertical" enctype="multipart/form-data">
-                                                <input type="hidden" name="id" value="<?=$row['id'] ?>" />
-                                                <input type="hidden" name="user_id" value="<?=$row['user_id'] ?>" />
-                                                <div class="row">
-                                                    <div class="col-6">
-                                                        <div class="mb-1">
-                                                            <label for="tanggal" class="form-label">Date</label>
-                                                            <input type="date" class="form-control" name="tanggal" value="<?=$row['tanggal'] ?>" required />
-                                                        </div>
-                                                        <div class="mb-1">
-                                                            <label for="nama" class="form-label">User</label>
-                                                            <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" disabled />
-                                                        </div>
-                                                    </div>
-                                                    <!-- <div class="col-6">
-                                                        <div class="mb-1">
-                                                            <label for="nama" class="form-label">Name</label>
-                                                            <input type="text" class="form-control" name="nama" value="<?= $row['nup'] ?> - <?= $row['nama'] ?> (<?= $row['divisi'] ?>)" disabled />
-                                                        </div>
-                                                    </div> -->
-                                                    <div class="col-6">
-                                                        <div class="mb-1">
-                                                            <label for="deskripsi" class="form-label">Description</label>
-                                                            <textarea style="height: 115px;" class="form-control" name="deskripsi" required><?=$row['deskripsi'] ?></textarea>
-                                                        </div>
-                                                    </div>
-                                                    <!-- <div class="col-6">
-                                                        <input type="hidden" id="time_upload_activity_planning" name="time_upload_activity_planning" />
-                                                    </div> -->
-                                                    
-                                                    <br>
-                                                    
-                                                    <div class="col-6">
-                                                        <input type="hidden" id="gambar" name="gambar" value="<?= $row['gambar'] ?>" readonly />
-                                                    </div>
-                                                    <div class="col-12">
-                                                        <a href="planning.php" class="btn btn-outline-secondary">Back</a>
-                                                        <button type="submit" name="update_planning" class="btn btn-primary_2 me-1">Save</button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
-                            </section>
+                </div>
+            <div class="content-body">
+                <!-- Table Hover Animation start -->
+                <div class="row" id="table-hover-animation">
+                    <div class="col-12">
+                        <div class="card">
+                            <!-- <div class="card-header">
+                                <h4 class="card-title">Feedback</h4>
+                            </div> -->
+                            <div class="table-responsive"> <!-- style="min-width: 1000px;" -->
+                                <table class="table table-hover-animation">
+                                    <thead>
+                                        <tr style="text-align: center;">
+                                            <th>No.</th>
+                                            <th style="min-width: 250px;">Name</th>
+                                            <th style="min-width: 250px;">Email</th>
+                                            <th style="min-width: 500px;">Subject</th>
+                                            <th style="min-width: 500px;">Message</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody style="text-align: center;">
+                                    <?php 
+                                        $i = 1;
+                                        if(mysqli_num_rows($result) > 0){
+                                            while($row = mysqli_fetch_assoc($result)){
+                                                $masked_email = mask_email($row['email']);
+                                        ?>
+                                        <tr>
+                                            <td><?php echo $i; ?></td>
+                                            <td>Anonymous</td> 
+                                            <td><?php echo $masked_email; ?></td>
+                                            <td><?php echo $row['subject']; ?></td>
+                                            <td><?php echo $row['message']; ?></td>
+                                            <td>
+                                                <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
+                                            </td>
+                                        </tr>
+                                        <?php
+                                            $i++;
+                                            }
+                                        }
+                                        ?>
+                                    </tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -251,6 +258,7 @@
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
@@ -262,6 +270,36 @@
                 });
             }
         })
+
+        function confirmDelete(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'This action cannot be undone!',
+                    text: "Deleting this feedback will remove all associated data. Are you sure you want to proceed?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'feedback.php?id=' + id + '&action=delete';
+                    }
+                });
+            }
+        });
+    }
     </script>
 
 </body>
