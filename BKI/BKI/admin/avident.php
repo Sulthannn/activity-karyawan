@@ -5,13 +5,48 @@
         exit;
     }
 
+    $nama = $_SESSION['nama'];
+    $role = $_SESSION['role'];
+
     include("koneksi.php");
+
+    // Switch Alert - Delete
+    if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
+        $id = intval($_GET['id']);
+        $result = hapus_planning($id);
+        if ($result > 0) {
+            echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Avident successfully deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    }).then(() => {
+                        document.location.href = 'avident.php';
+                    });
+                }
+                </script>";
+        } else {
+            echo "<script>
+                window.onload = function() {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Avident failed to deleted!',
+                        showConfirmButton: false,
+                        timer: 1500
+                    });
+                }
+            </script>";
+        }
+    }
 
     $query = "
         SELECT p.id, p.tanggal, p.gambar, p.time_upload_avident, 
             u.nup, u.nama, u.divisi
         FROM planning p
         JOIN users u ON p.user_id = u.id
+        ORDER BY p.time_upload_avident ASC
     ";
     $result = mysqli_query($koneksi, $query);
 ?>
@@ -83,9 +118,9 @@
             </div>
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder">Tirta Samudera Ramadhani</span><span class="user-status">Super Admin</span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
+                        <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="..." alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
-                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="page-profile.html"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a><a class="dropdown-item" href="break.php"><i class="me-50" data-feather="battery-charging"></i> Break</a>
                         <a class="dropdown-item" href="logout.php"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -122,6 +157,8 @@
                         </ul>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li><br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
                     </li>
                 </ul>
             </div>
@@ -219,7 +256,7 @@
                                             </td>
                                             <td>
                                                 <a href="edit_avident.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Upload</a>
-                                                <a href="hapus_avident.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-danger" onclick="return confirm('Yakin hapus data <?php echo $row['nama']; ?> ?')">Delete</a>
+                                                <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -254,6 +291,7 @@
     <!-- END: Theme JS-->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(window).on('load', function() {
@@ -261,6 +299,36 @@
                 feather.replace({ width: 14, height: 14 });
             }
         })
+
+        function confirmDelete(id) {
+        Swal.fire({
+            title: 'Are you sure?',
+            text: "You won't be able to revert this!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#3085d6',
+            cancelButtonColor: '#d33',
+            confirmButtonText: 'Yes, delete it!',
+            cancelButtonText: 'Cancel'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire({
+                    title: 'This action cannot be undone!',
+                    text: "Deleting this avident will remove all associated data. Are you sure you want to proceed?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Yes, delete it!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = 'avident.php?id=' + id + '&action=delete';
+                    }
+                });
+            }
+        });
+    }
     </script>
 
 </body>

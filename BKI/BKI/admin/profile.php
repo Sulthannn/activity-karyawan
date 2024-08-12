@@ -1,27 +1,29 @@
 <?php
     session_start();
-    if(!isset($_SESSION['username'])){
-        header("Location: Halaman_login.php");      
+    if (!isset($_SESSION['username'])) {
+        header("location: Halaman_login.php");
+        exit;
     }
-
-    include("koneksi.php");
 
     $nama = $_SESSION['nama'];
     $role = $_SESSION['role'];
     $image = $_SESSION['image'];
 
-    $query = "
-    SELECT p.id, p.tanggal, p.time_login, p.before_break, p.after_break, p.time_logout, p.geotagging, 
-        u.nup, u.nama, u.divisi
-    FROM time p
-    JOIN users u ON p.user_id = u.id
-    WHERE u.status = 'active'
-    ";
+    require 'koneksi.php';
 
-    $result = mysqli_query($koneksi, $query);
+    $user_id = $_SESSION['user_id'];
 
-    date_default_timezone_set('Asia/Jakarta');
-    $current_time = date('H:i:s');
+    $query = "SELECT nup, image, nama, divisi, role, status FROM users WHERE id = ?";
+    $stmt = $koneksi->prepare($query);
+    $stmt->bind_param("i", $user_id);
+    $stmt->execute();
+    $result = $stmt->get_result();
+    $user = $result->fetch_assoc();
+
+    if (!$user) {
+        echo "User not found!";
+        exit;
+    }
 ?>
 
 <!DOCTYPE html>
@@ -36,7 +38,7 @@
     <meta name="description" content="Vuexy admin is super flexible, powerful, clean &amp; modern responsive bootstrap 4 admin template with unlimited possibilities.">
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
-    <title>BKI - Dashboard</title>
+    <title>BKI - Profile</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -48,15 +50,33 @@
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap-extended.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/colors.css">
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/components.css">
+    <!-- <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/dark-layout.css">
+    <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/bordered-layout.css"> -->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/themes/semi-dark-layout.css">
     <!-- END: Theme CSS-->
 
     <!-- BEGIN: Page CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/core/menu/menu-types/vertical-menu.css">
     <!-- END: Page CSS-->
+
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+
+    <style>
+    .image-preview {
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        max-width: 100%;
+        height: auto;
+    }
+    .image-preview:hover {
+        box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+    }
+    </style>
 </head>
 
-<body class="vertical-layout vertical-menu-modern navbar-floating footer-static" data-open="click" data-menu="vertical-menu-modern" data-col="">
+<body class="vertical-layout vertical-menu-modern  navbar-floating footer-static" data-open="click" data-menu="vertical-menu-modern" data-col="">
+
     <!-- BEGIN: Header-->
     <nav class="header-navbar navbar navbar-expand-lg align-items-center floating-nav navbar-light navbar-shadow container-xxl">
         <div class="navbar-container d-flex content">
@@ -65,10 +85,8 @@
                     <li class="nav-item"><a class="nav-link menu-toggle" href="#"><i class="ficon" data-feather="menu"></i></a></li>
                 </ul>
             </div>
-
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
@@ -87,7 +105,7 @@
             <ul class="nav navbar-nav flex-row">
                 <li class="nav-item me-auto">
                     <a class="navbar-brand" href="#">
-                        <h1 class="brand-text" style="font-size: 20px;">BKI</h1>
+                        <h2 class="brand-text" font-size: 20px;">BKI</h2>
                         <hr>
                     </a>
                 </li>
@@ -96,7 +114,7 @@
         <div class="shadow-bottom"></div>
             <div class="main-menu-content">
                 <ul class="navigation navigation-main" id="main-menu-navigation" data-menu="menu-navigation">
-                    <li class="active nav-item"><a class="d-flex align-items-center" href="dashboard.php"><i data-feather="home"></i><span class="menu-title text-truncate" data-i18n="Dashboard">Dashboard</span></a>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="dashboard.php"><i data-feather="home"></i><span class="menu-title text-truncate" data-i18n="Dashboard">Dashboard</span></a>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="#"><i data-feather="users"></i><span class="menu-title text-truncate" data-i18n="Employee Activity">Employee Activity</span></a>
                         <ul class="menu-content">
@@ -109,11 +127,9 @@
                         </ul>
                     </li><br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
-                    </li><br>
+                    </li>
+                    <br>
                     <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role">Role</span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback">Feedback</span></a>
                     </li>
                 </ul>
             </div>
@@ -122,16 +138,64 @@
     <!-- END: Main Menu-->
 
     <!-- BEGIN: Content-->
-    <div class="app-content content ">
+    <div class="app-content content">
         <div class="content-overlay"></div>
         <div class="header-navbar-shadow"></div>
         <div class="content-wrapper container-xxl p-0">
             <div class="content-header row">
                 <div class="content-header-left col-md-9 col-12 mb-2">
                     <div class="row breadcrumbs-top">
-                            <h2 class="float-start mb-0" style="font-size: 30px;">Welcome, <?php echo $nama; ?></h2>
+                        <h2 class="float-start mb-0">Profile</h2>
                     </div>
                 </div>
+            </div>
+            <div class="content-body">
+                <section id="page-account-settings">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <div class="d-flex align-items-center flex-column">
+                                        <a href="img/<?php echo htmlspecialchars($user['image']); ?>" data-lightbox="profile-image" data-title="Profile Image">
+                                            <img src="img/<?php echo htmlspecialchars($user['image']); ?>" id="account-upload-img" class="image-preview" alt="profile image" width="250" />
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="card">
+                                <div class="card-body">
+                                <p class="card-title" style="font-size: 25px; margin-top: 20px;">Profile Details</p>
+                                <div style="margin-bottom: 43px;"></div>
+                                <div class="tab-content">
+                                        <div role="tabpanel" class="tab-pane active" id="account-vertical-general" aria-labelledby="account-pill-general" aria-expanded="true">
+                                            <form class="validate-form mt-2" method="post" action="update_profile.php">
+                                                <div class="row">
+                                                    <div class="col-12 col-sm-6 mb-1">
+                                                        <label class="form-label" for="account-nup">NUP</label>
+                                                        <input type="text" class="form-control" id="account-nup" name="nup" value="<?php echo htmlspecialchars($user['nup']); ?>" disabled />
+                                                    </div>
+                                                    <div class="col-12 col-sm-6 mb-1">
+                                                        <label class="form-label" for="account-name">Name</label>
+                                                        <input type="text" class="form-control" id="account-name" name="nama" value="<?php echo htmlspecialchars($user['nama']); ?>" disabled />
+                                                    </div>
+                                                    <div class="col-12 col-sm-6 mb-1">
+                                                        <label class="form-label" for="account-divisi">Division</label>
+                                                        <input type="text" class="form-control" id="account-divisi" name="divisi" value="<?php echo htmlspecialchars($user['divisi']); ?>" disabled />
+                                                    </div>
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <a href="dashboard.php" class="btn btn-primary_2 me-1">Back</a>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -149,86 +213,21 @@
 
     <!-- BEGIN: Vendor JS-->
     <script src="../../../app-assets/vendors/js/vendors.min.js"></script>
-    <!-- BEGIN Vendor JS-->
+    <!-- END: Vendor JS-->
 
     <!-- BEGIN: Theme JS-->
     <script src="../../../app-assets/js/core/app-menu.js"></script>
     <script src="../../../app-assets/js/core/app.js"></script>
     <!-- END: Theme JS-->
 
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
-    <?php if (isset($_SESSION['telat']) && $_SESSION['telat'] === true): ?>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
 
     <script>
-        Swal.fire({
-            title: 'Warning',
-            text: 'You are <?php echo $_SESSION['telat_waktu']; ?>',
-            icon: 'warning',
-            confirmButtonText: 'OK'
-        });
-    </script>
-
-    <?php unset($_SESSION['telat']); ?>
-    <?php unset($_SESSION['telat_waktu']); ?>
-    <?php endif; ?>
-
-    <script>
-        $(window).on('load', function() {
+        $(window).on('load', function () {
             if (feather) {
-                feather.replace({
-                    width: 14,
-                    height: 14
-                });
+                feather.replace({ width: 14, height: 14 });
             }
         })
-        
-    function confirmLogout() {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will be logged out!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, logout!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                Swal.fire({
-                    title: 'Final Check',
-                    text: "Have you finished all your work for today?",
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#3085d6',
-                    cancelButtonColor: '#d33',
-                    confirmButtonText: 'Yes, I am done!',
-                    cancelButtonText: 'No, let me finish'
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        window.location.href = 'logout.php';
-                    }
-                });
-            }
-        });
-    }
-
-    function confirmBreak() {
-        Swal.fire({
-            title: 'Are you sure?',
-            text: "You will take a break!",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#3085d6',
-            cancelButtonColor: '#d33',
-            confirmButtonText: 'Yes, break!',
-            cancelButtonText: 'Cancel'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                window.location.href = 'break.php';
-            }
-        });
-    }
 
         function confirmLogout() {
             Swal.fire({
@@ -276,8 +275,7 @@
                 }
             });
         }
-
     </script>
-    
+
 </body>
 </html>
