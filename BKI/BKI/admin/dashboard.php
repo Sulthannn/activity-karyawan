@@ -6,18 +6,35 @@
 
     include("koneksi.php");
 
-    $nama = $_SESSION['nama'];
-    $role = $_SESSION['role'];
+    $nama  = $_SESSION['nama'];
+    $role  = $_SESSION['role'];
     $image = $_SESSION['image'];
 
-    $query = "
-    SELECT p.id, p.tanggal, p.time_login, p.before_break, p.after_break, p.time_logout, p.geotagging, 
-        u.nup, u.nama, u.divisi
-    FROM time p
-    JOIN users u ON p.user_id = u.id
-    WHERE u.status = 'active'
-    ";
+    $query_all_planning = "SELECT COUNT(*) as total_all_planning FROM planning";
+    $query_planning = "SELECT COUNT(*) as total_planning FROM planning WHERE status = 'On-progress'";
+    $query_avident = "SELECT COUNT(*) as total_avident FROM planning WHERE status = 'Completed'";
 
+    $result_all_planning = mysqli_query($koneksi, $query_all_planning);
+    $result_planning = mysqli_query($koneksi, $query_planning);
+    $result_avident = mysqli_query($koneksi, $query_avident);
+
+    if (!$result_all_planning || !$result_planning || !$result_avident) {
+        echo "Error: " . mysqli_error($koneksi);
+        exit;
+    }
+
+    $data_all_planning = mysqli_fetch_assoc($result_all_planning);
+    $data_planning = mysqli_fetch_assoc($result_planning);
+    $data_avident = mysqli_fetch_assoc($result_avident);
+
+    // Query untuk data aktivitas
+    $query = "
+        SELECT p.id, p.tanggal, p.time_login, p.before_break, p.after_break, p.time_logout, p.geotagging, 
+            u.nup, u.nama, u.divisi
+        FROM time p
+        JOIN users u ON p.user_id = u.id
+        WHERE u.status = 'active'
+    ";
     $result = mysqli_query($koneksi, $query);
 
     date_default_timezone_set('Asia/Jakarta');
@@ -54,6 +71,16 @@
     <!-- BEGIN: Page CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/core/menu/menu-types/vertical-menu.css">
     <!-- END: Page CSS-->
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+    <style>
+        .icon-large {
+            width: 24px;
+            height: 24px;
+            margin-right: 10px;
+        }
+    </style>
 </head>
 
 <body class="vertical-layout vertical-menu-modern navbar-floating footer-static" data-open="click" data-menu="vertical-menu-modern" data-col="">
@@ -65,10 +92,8 @@
                     <li class="nav-item"><a class="nav-link menu-toggle" href="#"><i class="ficon" data-feather="menu"></i></a></li>
                 </ul>
             </div>
-
             <ul class="nav navbar-nav align-items-center ms-auto">
                 <li class="nav-item dropdown dropdown-user"><a class="nav-link dropdown-toggle dropdown-user-link" id="dropdown-user" href="#" data-bs-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
@@ -108,13 +133,9 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role">Role </span></a>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role">Role</span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback">Feedback</span></a>
-                    </li>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback">Feedback </span></a>
                 </ul>
             </div>
         </div>
@@ -129,9 +150,74 @@
             <div class="content-header row">
                 <div class="content-header-left col-md-9 col-12 mb-2">
                     <div class="row breadcrumbs-top">
-                            <h2 class="float-start mb-0" style="font-size: 30px;">Welcome, <?php echo $nama; ?></h2>
+                            <h2 class="float-start mb-0" style="font-size: 30px;">Welcome <?php echo $nama; ?>!</h2>
                     </div>
                 </div>
+            </div>
+    <!-- END: Content-->
+    <div class="content-body">
+                <!-- Dashboard Ecommerce Starts -->
+                <section id="dashboard-stats">
+                    <div class="row match-height">
+                        <!-- All Planning Card -->
+                        <div class="col-xl-4 col-md-6 col-12">
+                            <div class="card card-statistics">
+                                <div class="card-header">
+                                    <h4 style="font-size: 20px;" class="card-title">
+                                        <i data-feather="calendar" class="icon-large"></i>
+                                        All Planning
+                                    </h4>
+                                </div>
+                                <div class="card-body statistics-body">
+                                    <div class="statistics-details">
+                                        <div class="d-flex justify-content-between">
+                                            <div style="font-size: 17px;" class="statistics-title">Total</div>
+                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_all_planning['total_all_planning']); ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Planning Card -->
+                        <div class="col-xl-4 col-md-6 col-12">
+                            <div class="card card-statistics">
+                                <div class="card-header">
+                                    <h4 style="font-size: 20px;" class="card-title">
+                                        <i data-feather="clock" class="icon-large"></i>
+                                        Planning
+                                    </h4>
+                                </div>
+                                <div class="card-body statistics-body">
+                                    <div class="statistics-details">
+                                        <div class="d-flex justify-content-between">
+                                            <div style="font-size: 17px;" class="statistics-title">On-Progress</div>
+                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_planning['total_planning']); ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Avident Card -->
+                        <div class="col-xl-4 col-md-6 col-12">
+                            <div class="card card-statistics">
+                                <div class="card-header">
+                                    <h4 style="font-size: 20px;" class="card-title">
+                                        <i data-feather="check-circle" class="icon-large"></i>
+                                        Avident
+                                    </h4>
+                                </div>
+                                <div class="card-body statistics-body">
+                                    <div class="statistics-details">
+                                        <div class="d-flex justify-content-between">
+                                            <div style="font-size: 17px;" class="statistics-title">Completed</div>
+                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_avident['total_avident']); ?></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </div>
@@ -229,54 +315,6 @@
             }
         });
     }
-
-        function confirmLogout() {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You will be logged out!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, logout!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    Swal.fire({
-                        title: 'Final Check',
-                        text: "Have you finished all your work for today?",
-                        icon: 'question',
-                        showCancelButton: true,
-                        confirmButtonColor: '#3085d6',
-                        cancelButtonColor: '#d33',
-                        confirmButtonText: 'Yes, I am done!',
-                        cancelButtonText: 'No, let me finish'
-                    }).then((result) => {
-                        if (result.isConfirmed) {
-                            window.location.href = 'logout.php';
-                        }
-                    });
-                }
-            });
-        }
-
-        function confirmBreak() {
-            Swal.fire({
-                title: 'Are you sure?',
-                text: "You will take a break!",
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#3085d6',
-                cancelButtonColor: '#d33',
-                confirmButtonText: 'Yes, break!',
-                cancelButtonText: 'Cancel'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    window.location.href = 'break.php';
-                }
-            });
-        }
-
     </script>
     
 </body>

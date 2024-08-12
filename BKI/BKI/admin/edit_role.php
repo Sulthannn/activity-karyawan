@@ -229,16 +229,6 @@
                                             </div>
                                             <div class="col-6">
                                                 <div class="mb-1">
-                                                    <label for="role" class="form-label">Role</label>
-                                                    <select class="form-control" id="role" name="role" required>
-                                                        <option value="">-</option>
-                                                        <option value="User" <?= $row['role'] === 'User' ? 'selected' : '' ?>>User</option>
-                                                        <option value="Admin" <?= $row['role'] === 'Admin' ? 'selected' : '' ?>>Admin</option>
-                                                    </select>
-                                                </div>
-                                            </div>
-                                            <div class="col-6">
-                                                <div class="mb-1">
                                                     <label for="password" class="form-label">Password</label>
                                                     <input type="password" class="form-control" name="password" placeholder="New Password" />
                                                 </div>

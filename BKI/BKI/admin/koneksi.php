@@ -36,14 +36,10 @@ function tambah_user($data) {
     $image = upload_file();
 
     $nup_prefix = substr($nup, 0, 3);
-    if ($nup_prefix == '190') {
+    if ($nup_prefix == '170') {
         $role = 'Super-Admin, User';
-    } elseif ($nup_prefix == '180') {
-        $role = 'Admin, User';
-    } elseif ($nup_prefix == '170') {
-        $role = 'Super-Admin';
     } elseif ($nup_prefix == '160') {
-        $role = 'Admin';
+        $role = 'Admin, User';
     } elseif ($nup_prefix == '150') {
         $role = 'User';
     } else {
@@ -176,8 +172,18 @@ function update_user($data) {
     $divisi = htmlspecialchars($data['divisi']);
     $username = htmlspecialchars($data['username']);
     $password = md5(htmlspecialchars($data['password']));
-    $role = htmlspecialchars($data['role']);
     $status = htmlspecialchars($data['status']);
+
+    $nup_prefix = substr($nup, 0, 3);
+    if ($nup_prefix == '170') {
+        $role = 'Super-Admin, User';
+    } elseif ($nup_prefix == '160') {
+        $role = 'Admin, User';
+    } elseif ($nup_prefix == '150') {
+        $role = 'User';
+    } else {
+        $role = 'User';
+    }
 
     if ($_FILES['image']['error'] === UPLOAD_ERR_OK) {
         $stmt = $koneksi->prepare("SELECT image FROM users WHERE id = ?");
