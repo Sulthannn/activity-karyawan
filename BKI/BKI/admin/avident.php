@@ -55,16 +55,17 @@
     }
 
     $query = "
-        SELECT p.id, p.tanggal, p.gambar, p.time_upload_avident, 
-            u.nup, u.nama, u.divisi
-        FROM planning p
-        JOIN users u ON p.user_id = u.id
-        ORDER BY p.time_upload_avident ASC
+    SELECT p.id, p.tanggal, p.gambar, p.time_upload_avident, 
+           u.nup, u.nama, u.divisi
+    FROM planning p
+    JOIN users u ON p.user_id = u.id
     ";
-    
+
     if (is_user()) {
-        $query .= " AND u.nama = '$nama'";
+        $query .= " WHERE u.nama = '$nama'";
     }
+
+    $query .= " ORDER BY p.time_upload_avident ASC";
 
     $result = mysqli_query($koneksi, $query);
 ?>

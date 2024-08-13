@@ -5,11 +5,23 @@
         exit;
     }
 
-    $nama = $_SESSION['nama'];
-    $role = $_SESSION['role'];
+    $nama  = $_SESSION['nama'];
+    $role  = $_SESSION['role'];
     $image = $_SESSION['image'];
 
     require 'koneksi.php';
+
+    function is_superadmin() {
+        return $_SESSION['role'] === 'Super-Admin';
+    }
+    
+    function is_admin() {
+        return $_SESSION['role'] === 'Admin';
+    }
+    
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
 
     $user_id = $_SESSION['user_id'];
 
@@ -126,11 +138,12 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
-                    </li>
-                    <br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    </li>
+                    <?php if (is_superadmin() || is_admin()): ?>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                        </li><br>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -221,6 +234,7 @@
     <!-- END: Theme JS-->
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/js/lightbox.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     <script>
         $(window).on('load', function () {
