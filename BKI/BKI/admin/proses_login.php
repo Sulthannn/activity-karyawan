@@ -41,7 +41,7 @@ if (mysqli_num_rows($result) > 0) {
         }
 
         if (isset($_SESSION['first_login']) && $_SESSION['first_login']) {
-            $batas_waktu = strtotime('00:05:00');
+            $batas_waktu = strtotime('08:30:00');
             $waktu_login = strtotime($time_login);
             
             if ($waktu_login > $batas_waktu) {

@@ -74,18 +74,17 @@
     }
 
     $query = "
-        SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.status, p.gambar, p.history_update,
-            u.nup, u.nama, u.divisi
-        FROM planning p
-        JOIN users u ON p.user_id = u.id
-        WHERE u.status = 'Active'
-        ORDER BY p.status DESC, p.time_upload_avident ASC
+    SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.status, p.gambar, p.history_update,
+        u.nup, u.nama, u.divisi
+    FROM planning p
+    JOIN users u ON p.user_id = u.id
+    WHERE u.status = 'Active'
     ";
 
     if (is_user()) {
         $query .= " AND u.nama = '$nama'";
     }
-
+    
     $result = mysqli_query($koneksi, $query);
 ?>
 
@@ -224,7 +223,7 @@
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
                         
-                        <?php if (is_superadmin()): ?>
+                        <?php if (is_superadmin() || is_user()): ?>
                             <a href="add_planning.php" class="btn btn-primary">Add Data</a>
                         <?php endif; ?>
                         
@@ -250,7 +249,7 @@
                                                 <th style="min-width: 250px;">Gambar</th>
                                                 <th style="min-width: 150px;">Status</th>
                                                 <th style="min-width: 150px;">History</th>
-                                                <?php if (is_superadmin()): ?>
+                                                <?php if (is_superadmin() || is_user()): ?>
                                                 <th style="min-width: 250px;">Action</th>
                                                 <?php endif; ?>
                                             </tr>
@@ -302,7 +301,7 @@
                                                     <span class="<?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
                                                 </td>
                                                 <td><?php echo $row['history_update']; ?></td>
-                                                <?php if (is_superadmin()): ?>
+                                                <?php if (is_superadmin() || is_user()): ?>
                                                 <td>
                                                     <a href="edit_planning.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
                                                     <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>

@@ -171,7 +171,6 @@ function update_user($data) {
     $nama = htmlspecialchars($data['nama']);
     $divisi = htmlspecialchars($data['divisi']);
     $username = htmlspecialchars($data['username']);
-    $password = md5(htmlspecialchars($data['password']));
     $status = htmlspecialchars($data['status']);
 
     $nup_prefix = substr($nup, 0, 3);
@@ -196,16 +195,40 @@ function update_user($data) {
         }
 
         $image = upload_file();
-        $stmt = $koneksi->prepare("UPDATE users SET nup = ?, nama = ?, divisi = ?, username = ?, password = ?, role = ?, status = ?, image = ? WHERE id = ?");
-        $stmt->bind_param("ssssssssi", $nup, $nama, $divisi, $username, $password, $role, $status, $image, $id);
+        $image_query = ", image = ?";
+        $image_param = $image;
     } else {
-        $stmt = $koneksi->prepare("UPDATE users SET nup = ?, nama = ?, divisi = ?, username = ?, password = ?, role = ?, status = ? WHERE id = ?");
-        $stmt->bind_param("sssssssi", $nup, $nama, $divisi, $username, $password, $role, $status, $id);
+        $image_query = "";
+        $image_param = null;
+    }
+
+    $password = !empty($data['password']) ? md5(htmlspecialchars($data['password'])) : null;
+
+    if ($password) {
+        $password_query = ", password = ?";
+        $password_param = $password;
+    } else {
+        $password_query = "";
+        $password_param = null;
+    }
+
+    $query = "UPDATE users SET nup = ?, nama = ?, divisi = ?, username = ?, role = ?, status = ?" . $image_query . $password_query . " WHERE id = ?";
+    $stmt = $koneksi->prepare($query);
+
+    if ($image_param && $password_param) {
+        $stmt->bind_param("ssssssssi", $nup, $nama, $divisi, $username, $role, $status, $image_param, $password_param, $id);
+    } elseif ($image_param) {
+        $stmt->bind_param("sssssssi", $nup, $nama, $divisi, $username, $role, $status, $image_param, $id);
+    } elseif ($password_param) {
+        $stmt->bind_param("sssssssi", $nup, $nama, $divisi, $username, $role, $status, $password_param, $id);
+    } else {
+        $stmt->bind_param("ssssssi", $nup, $nama, $divisi, $username, $role, $status, $id);
     }
 
     $stmt->execute();
     return $stmt->affected_rows;
 }
+
 
 function update_time($data) {
     global $koneksi;

@@ -6,26 +6,46 @@
 
     include("koneksi.php");
 
+    function is_superadmin() {
+        return $_SESSION['role'] === 'Super-Admin';
+    }
+    
+    function is_admin() {
+        return $_SESSION['role'] === 'Admin';
+    }
+    
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
+    
     $nama  = $_SESSION['nama'];
     $role  = $_SESSION['role'];
     $image = $_SESSION['image'];
 
-    $query_all_planning = "SELECT COUNT(*) as total_all_planning FROM planning";
-    $query_planning = "SELECT COUNT(*) as total_planning FROM planning WHERE status = 'On-progress'";
-    $query_avident = "SELECT COUNT(*) as total_avident FROM planning WHERE status = 'Completed'";
+    // Initialize query strings
+$query_all_planning = "SELECT COUNT(*) as total_all_planning FROM planning";
+$query_planning = "SELECT COUNT(*) as total_planning FROM planning WHERE status = 'On-progress'";
+$query_avident = "SELECT COUNT(*) as total_avident FROM planning WHERE status = 'Completed'";
 
-    $result_all_planning = mysqli_query($koneksi, $query_all_planning);
-    $result_planning = mysqli_query($koneksi, $query_planning);
-    $result_avident = mysqli_query($koneksi, $query_avident);
+// Modify queries if the role is User
+if ($role == 'User') {
+    $query_all_planning .= " WHERE user_id = (SELECT id FROM users WHERE username = '{$_SESSION['username']}')";
+    $query_planning .= " AND user_id = (SELECT id FROM users WHERE username = '{$_SESSION['username']}')";
+    $query_avident .= " AND user_id = (SELECT id FROM users WHERE username = '{$_SESSION['username']}')";
+}
 
-    if (!$result_all_planning || !$result_planning || !$result_avident) {
-        echo "Error: " . mysqli_error($koneksi);
-        exit;
-    }
+$result_all_planning = mysqli_query($koneksi, $query_all_planning);
+$result_planning = mysqli_query($koneksi, $query_planning);
+$result_avident = mysqli_query($koneksi, $query_avident);
 
-    $data_all_planning = mysqli_fetch_assoc($result_all_planning);
-    $data_planning = mysqli_fetch_assoc($result_planning);
-    $data_avident = mysqli_fetch_assoc($result_avident);
+if (!$result_all_planning || !$result_planning || !$result_avident) {
+    echo "Error: " . mysqli_error($koneksi);
+    exit;
+}
+
+$data_all_planning = mysqli_fetch_assoc($result_all_planning);
+$data_planning = mysqli_fetch_assoc($result_planning);
+$data_avident = mysqli_fetch_assoc($result_avident);
 
     // Query untuk data aktivitas
     $query = "
@@ -35,6 +55,7 @@
         JOIN users u ON p.user_id = u.id
         WHERE u.status = 'active'
     ";
+    
     $result = mysqli_query($koneksi, $query);
 
     date_default_timezone_set('Asia/Jakarta');
@@ -133,9 +154,13 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role">Role </span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback">Feedback </span></a>
+                    <?php if (is_superadmin() || is_admin()): ?>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                    </li>
+                    <br>
+                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                    </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -158,66 +183,66 @@
     <div class="content-body">
                 <!-- Dashboard Ecommerce Starts -->
                 <section id="dashboard-stats">
-                    <div class="row match-height">
-                        <!-- All Planning Card -->
-                        <div class="col-xl-4 col-md-6 col-12">
-                            <div class="card card-statistics">
-                                <div class="card-header">
-                                    <h4 style="font-size: 20px;" class="card-title">
-                                        <i data-feather="calendar" class="icon-large"></i>
-                                        All Planning
-                                    </h4>
-                                </div>
-                                <div class="card-body statistics-body">
-                                    <div class="statistics-details">
-                                        <div class="d-flex justify-content-between">
-                                            <div style="font-size: 17px;" class="statistics-title">Total</div>
-                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_all_planning['total_all_planning']); ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Planning Card -->
-                        <div class="col-xl-4 col-md-6 col-12">
-                            <div class="card card-statistics">
-                                <div class="card-header">
-                                    <h4 style="font-size: 20px;" class="card-title">
-                                        <i data-feather="clock" class="icon-large"></i>
-                                        Planning
-                                    </h4>
-                                </div>
-                                <div class="card-body statistics-body">
-                                    <div class="statistics-details">
-                                        <div class="d-flex justify-content-between">
-                                            <div style="font-size: 17px;" class="statistics-title">On-Progress</div>
-                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_planning['total_planning']); ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- Avident Card -->
-                        <div class="col-xl-4 col-md-6 col-12">
-                            <div class="card card-statistics">
-                                <div class="card-header">
-                                    <h4 style="font-size: 20px;" class="card-title">
-                                        <i data-feather="check-circle" class="icon-large"></i>
-                                        Avident
-                                    </h4>
-                                </div>
-                                <div class="card-body statistics-body">
-                                    <div class="statistics-details">
-                                        <div class="d-flex justify-content-between">
-                                            <div style="font-size: 17px;" class="statistics-title">Completed</div>
-                                            <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_avident['total_avident']); ?></div>
-                                        </div>
-                                    </div>
-                                </div>
+        <div class="row match-height">
+            <!-- All Planning Card -->
+            <div class="col-xl-4 col-md-6 col-12">
+                <div class="card card-statistics">
+                    <div class="card-header">
+                        <h4 style="font-size: 20px;" class="card-title">
+                            <i data-feather="calendar" class="icon-large"></i>
+                            All Planning
+                        </h4>
+                    </div>
+                    <div class="card-body statistics-body">
+                        <div class="statistics-details">
+                            <div class="d-flex justify-content-between">
+                                <div style="font-size: 17px;" class="statistics-title">Total</div>
+                                <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_all_planning['total_all_planning']); ?></div>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
+            </div>
+            <!-- Planning Card -->
+            <div class="col-xl-4 col-md-6 col-12">
+                <div class="card card-statistics">
+                    <div class="card-header">
+                        <h4 style="font-size: 20px;" class="card-title">
+                            <i data-feather="clock" class="icon-large"></i>
+                            Planning
+                        </h4>
+                    </div>
+                    <div class="card-body statistics-body">
+                        <div class="statistics-details">
+                            <div class="d-flex justify-content-between">
+                                <div style="font-size: 17px;" class="statistics-title">On-Progress</div>
+                                <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_planning['total_planning']); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Avident Card -->
+            <div class="col-xl-4 col-md-6 col-12">
+                <div class="card card-statistics">
+                    <div class="card-header">
+                        <h4 style="font-size: 20px;" class="card-title">
+                            <i data-feather="check-circle" class="icon-large"></i>
+                            Avident
+                        </h4>
+                    </div>
+                    <div class="card-body statistics-body">
+                        <div class="statistics-details">
+                            <div class="d-flex justify-content-between">
+                                <div style="font-size: 17px;" class="statistics-title">Completed</div>
+                                <div style="font-size: 17px;" class="statistics-value"><?php echo htmlspecialchars($data_avident['total_avident']); ?></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
             </div>
         </div>
     </div>
@@ -251,9 +276,23 @@
             title: 'Warning',
             text: 'You are <?php echo $_SESSION['telat_waktu']; ?>',
             icon: 'warning',
-            confirmButtonText: 'OK'
+            confirmButtonText: 'OK',
+            customClass: {
+                confirmButton: 'swal-confirm-button'
+            }
         });
+
+        // CSS untuk mengubah warna tombol konfirmasi
+        var style = document.createElement('style');
+        style.innerHTML = `
+            .swal-confirm-button {
+                background-color: #3085d6 !important;
+                color: white !important;
+            }
+        `;
+        document.head.appendChild(style);
     </script>
+
 
     <?php unset($_SESSION['telat']); ?>
     <?php unset($_SESSION['telat_waktu']); ?>
