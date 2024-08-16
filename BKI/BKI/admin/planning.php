@@ -7,7 +7,7 @@
 
     $nama  = $_SESSION['nama'];
     $role  = $_SESSION['role'];
-    $image  = $_SESSION['image'];
+    $image = $_SESSION['image'];
 
     require 'koneksi.php';
 
@@ -16,13 +16,21 @@
     function is_superadmin() {
         return $_SESSION['role'] === 'Super-Admin';
     }
-    
+
     function is_admin() {
         return $_SESSION['role'] === 'Admin';
     }
-    
+
     function is_user() {
         return $_SESSION['role'] === 'User';
+    }
+
+    $selected_month = date('m'); 
+    $selected_year  = date('Y');
+
+    if ($_SERVER["REQUEST_METHOD"] == "GET" && isset($_GET['search'])) {
+        $selected_month = htmlspecialchars($_GET['month']);
+        $selected_year  = htmlspecialchars($_GET['year']);
     }
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -74,16 +82,21 @@
     }
 
     $query = "
-    SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.status, p.gambar, p.history_update,
-        u.nup, u.nama, u.divisi
-    FROM planning p
-    JOIN users u ON p.user_id = u.id
-    WHERE u.status = 'Active'
+        SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.status, p.gambar, p.history_update,
+            u.nup, u.nama, u.divisi
+        FROM planning p
+        JOIN users u ON p.user_id = u.id
+        WHERE u.status = 'Active' 
+        AND MONTH(p.tanggal) = '$selected_month' 
+        AND YEAR(p.tanggal) = '$selected_year'
     ";
-
+    
     if (is_user()) {
-        $query .= " AND u.nama = '$nama'";
+        $query .= " AND u.nama = '" . mysqli_real_escape_string($koneksi, $nama) . "'";
     }
+
+    $query .= " ORDER BY p.status, p.time_upload_activity_planning ASC";
+
     
     $result = mysqli_query($koneksi, $query);
 ?>
@@ -101,6 +114,7 @@
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>BKI - Planning</title>
+    <link href="img/logo.png" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -140,6 +154,14 @@
         .gallery-icon:hover {
             color: #1A4F6A;
         }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #searchInput:hover {
+            border: 1px solid #003285 !important;
+        }
     </style>
 </head>
 
@@ -158,7 +180,9 @@
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <?php if (is_user()): ?>
                         <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                    <?php endif; ?>
                         <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -222,100 +246,141 @@
                 <!-- Table Hover Animation start -->
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
-                        
-                        <?php if (is_superadmin() || is_user()): ?>
-                            <a href="add_planning.php" class="btn btn-primary">Add Data</a>
-                        <?php endif; ?>
-                        
-                        <br>
-                        <br>
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <?php if (is_superadmin() || is_user()): ?>
+                                <a href="add_planning.php" class="btn btn-primary">Add Data</a>
+                            <?php endif; ?>
+                            <form method="get" action="planning.php" class="d-flex">
+                                <div class="me-2">
+                                    <label for="month" class="form-label d-none">Month</label>
+                                    <select id="month" name="month" class="form-select">
+                                        <?php for ($m = 1; $m <= 12; $m++): ?>
+                                            <option value="<?php echo str_pad($m, 2, '0', STR_PAD_LEFT); ?>" <?php echo str_pad($m, 2, '0', STR_PAD_LEFT) == $selected_month ? 'selected' : ''; ?>>
+                                                <?php echo date('F', mktime(0, 0, 0, $m, 1)); ?>
+                                            </option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <div class="me-2">
+                                    <label for="year" class="form-label d-none">Year</label>
+                                    <select id="year" name="year" class="form-select">
+                                        <?php for ($y = date('Y'); $y >= 2000; $y--): ?>
+                                            <option value="<?php echo $y; ?>" <?php echo $y == $selected_year ? 'selected' : ''; ?>>
+                                                <?php echo $y; ?>
+                                            </option>
+                                        <?php endfor; ?>
+                                    </select>
+                                </div>
+                                <button type="submit" name="search" class="btn btn-primary">Search</button>
+                            </form>
+                        </div>
 
                         <div class="card">
-                            <div class="card-header">
-                                <h4 class="card-title">Planning Data</h4>
+                            <div class="card-header d-flex justify-content-between">
+                                <div>
+                                    <label for="entriesSelect">Show</label>
+                                    <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <label for="entriesSelect" class="ms-2">entries</label>
+                                </div>
+                                <div>
+                                    <input type="text" id="searchInput" placeholder="Search..." class="form-control search-input ms-auto" style="width: 165px;" onkeyup="searchTable()">
+                                    <form action="export_per_hari.php" method="POST" class="d-inline">
+                                    <div class="input-group mt-1">
+                                        <input type="date" name="export_date" id="export_date" class="form-control" required>
+                                        <button type="submit" class="btn btn-outline-secondary" style="margin-right: 25px; border-radius: 5px;"><i data-feather="download"></i> Daily Export</button>
+                                        <a href="export.php" class="btn btn-outline-secondary" style="border-radius: 5px;"><i data-feather="download"></i> Export All</a>
+                                    </div>
+                                </form>
+                                </div>
                             </div>
                             <div class="table-responsive">
-                                <table class="table table-hover-animation" style="min-width: 2000px;"> <!-- style="min-width: 250px;" -->
-                                    <!-- <div class="..."> -->
-                                        <thead>
-                                            <tr style="text-align: center;">
-                                                <th>No.</th>
-                                                <th style="min-width: 150px;">Date</th>
-                                                <th style="min-width: 150px;">NUP</th>
-                                                <th style="min-width: 350px;">Name</th>
-                                                <th style="min-width: 150px;">Division</th>
-                                                <th style="min-width: 500px;">Description</th>
-                                                <th style="min-width: 150px;">Upload Time</th>
-                                                <th style="min-width: 250px;">Gambar</th>
-                                                <th style="min-width: 150px;">Status</th>
-                                                <th style="min-width: 150px;">History</th>
-                                                <?php if (is_superadmin() || is_user()): ?>
-                                                <th style="min-width: 250px;">Action</th>
-                                                <?php endif; ?>
-                                            </tr>
-                                        </thead>
-                                        <tbody style="text-align: center;">
+                                <table class="table table-hover-animation" style="min-width: 2000px;">
+                                    <thead>
+                                        <tr style="text-align: center;">
+                                            <th>No.</th>
+                                            <th style="min-width: 150px;">Date</th>
+                                            <th style="min-width: 150px;">NUP</th>
+                                            <th style="min-width: 350px;">Name</th>
+                                            <th style="min-width: 150px;">Division</th>
+                                            <th style="min-width: 500px;">Description</th>
+                                            <th style="min-width: 150px;">Upload Time</th>
+                                            <th style="min-width: 250px;">Image</th>
+                                            <th style="min-width: 150px;">Status</th>
+                                            <th style="min-width: 150px;">History</th>
+                                            <?php if (is_superadmin() || is_user()): ?>
+                                            <th style="min-width: 250px;">Action</th>
+                                            <?php endif; ?>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="tableBody" style="text-align: center;">
                                         <?php
                                             $i = 1;
                                             while ($row = mysqli_fetch_assoc($result)) {
                                                 $gambar_arr = explode(',', $row['gambar']);
-                                            ?>
-                                            <tr>
-                                                <td><?php echo $i; ?></td>
-                                                <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
-                                                <td><?php echo $row['nup']; ?></td>
-                                                <td><?php echo $row['nama']; ?></td>
-                                                <td><?php echo $row['divisi']; ?></td>
-                                                <td style="text-align: justify;"><?php $deskripsi = $row['deskripsi']; echo nl2br(htmlspecialchars($deskripsi)); ?></td>
-                                                <td><?php echo $row['time_upload_activity_planning']; ?></td>
-                                                <td>
-                                                    <?php if (!empty($row['gambar'])): ?>
-                                                        <?php
-                                                            $gambar_arr = explode(',', $row['gambar']);
-                                                                foreach ($gambar_arr as $gambar):
-                                                            ?>
-                                                                    <a href="img/<?= htmlspecialchars($gambar) ?>" data-lightbox="gallery-<?= $row['id'] ?>" data-title="<?= htmlspecialchars($gambar) ?>" class="gallery-icon">
-                                                                        <i class="fas fa-images" style="font-size: 18px;"></i>
-                                                                    </a>
-                                                                    <?php endforeach;
-                                                                        ?>
-                                                    <?php else: 
-                                                        ?>
-                                                        
-                                                        No Image
-                                                    <?php endif;
-                                                        ?>
-                                                </td>
-                                                <td>
-                                                    <?php 
-                                                        $statusClass = '';
-                                                        $statusText = '';
-                                                            if (!empty($row['gambar'])) {
-                                                                $statusClass = 'badge bg-success';
-                                                                $statusText = 'Completed';
-                                                            } else {
-                                                                $statusClass = 'badge bg-warning';
-                                                                $statusText = 'On-progress';
-                                                            }
-                                                        ?>
-                                                    <span class="<?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
-                                                </td>
-                                                <td><?php echo $row['history_update']; ?></td>
-                                                <?php if (is_superadmin() || is_user()): ?>
-                                                <td>
-                                                    <a href="edit_planning.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
-                                                    <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
-                                                </td>
+                                        ?>
+                                        <tr>
+                                            <td><?php echo $i; ?></td>
+                                            <td><?php echo date('d-m-Y', strtotime($row['tanggal'])); ?></td>
+                                            <td><?php echo $row['nup']; ?></td>
+                                            <td><?php echo $row['nama']; ?></td>
+                                            <td><?php echo $row['divisi']; ?></td>
+                                            <td style="text-align: justify;"><?php $deskripsi = $row['deskripsi']; echo nl2br(htmlspecialchars($deskripsi)); ?></td>
+                                            <td><?php echo $row['time_upload_activity_planning']; ?></td>
+                                            <td>
+                                                <?php if (!empty($row['gambar'])): ?>
+                                                    <?php
+                                                        $gambar_arr = explode(',', $row['gambar']);
+                                                            foreach ($gambar_arr as $gambar):
+                                                    ?>
+                                                            <a href="img/<?= htmlspecialchars($gambar) ?>" data-lightbox="gallery-<?= $row['id'] ?>" data-title="<?= htmlspecialchars($gambar) ?>" class="gallery-icon">
+                                                                <i class="fas fa-images" style="font-size: 18px;"></i>
+                                                            </a>
+                                                    <?php endforeach; ?>
+                                                <?php else: ?>
+                                                    No Image
                                                 <?php endif; ?>
-                                            </tr>
+                                            </td>
+                                            <td>
+                                                <?php 
+                                                    $statusClass = '';
+                                                    $statusText = '';
+                                                    if (!empty($row['gambar'])) {
+                                                        $statusClass = 'badge bg-success';
+                                                        $statusText = 'Completed';
+                                                    } else {
+                                                        $statusClass = 'badge bg-warning';
+                                                        $statusText = 'On-progress';
+                                                    }
+                                                ?>
+                                                <span class="<?php echo $statusClass; ?>"><?php echo $statusText; ?></span>
+                                            </td>
+                                            <td><?php echo $row['history_update']; ?></td>
+                                            <?php if (is_superadmin() || is_user()): ?>
+                                            <td>
+                                                <a href="edit_planning.php?id=<?php echo $row['id']; ?>" class="btn btn-sm btn-primary_4">Edit</a>
+                                                <a href="#" class="btn btn-sm btn-danger" onclick="confirmDelete(<?php echo $row['id']; ?>); return false;">Delete</a>
+                                            </td>
+                                            <?php endif; ?>
+                                        </tr>
                                         <?php
                                             $i++;
                                         }
-                                            ?>
-                                        </tbody>
-                                    </table>
-                                </div>
+                                        ?>
+                                    </tbody>
+                                </table>
                             </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-2">
+                                    <div id="table-info" class="text-left"></div>
+                                    <div class="pagination-container">
+                                        <ul class="pagination">
+                                        </ul>
+                                    </div>
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -355,6 +420,88 @@
                 });
             }
         })
+
+        function searchTable() {
+            var input, filter, table, tr, td, i, j, txtValue;
+            input  = document.getElementById("searchInput");
+            filter = input.value.toLowerCase();
+            table  = document.querySelector(".table-hover-animation");
+            tr     = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { 
+                tr[i].style.display = "none";
+                td = tr[i].getElementsByTagName("td");
+                for (j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+        const entriesSelect = document.getElementById('entriesSelect');
+        const table = document.querySelector('.table-hover-animation');
+        const rows = table.getElementsByTagName('tr');
+        const info = document.getElementById('table-info');
+        const paginationContainer = document.querySelector('.pagination-container .pagination');
+
+        let currentPage = 1;
+        const rowsPerPage = parseInt(entriesSelect.value);
+
+        function updateTable() {
+            const entries = parseInt(entriesSelect.value);
+            let count = 0;
+            let totalEntries = rows.length - 1;
+            const totalPages = Math.ceil(totalEntries / entries);
+
+            for (let i = 1; i < rows.length; i++) {
+                if (i > (currentPage - 1) * entries && i <= currentPage * entries) {
+                    rows[i].style.display = '';
+                    count++;
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+            
+            let start = totalEntries > 0 ? (currentPage - 1) * entries + 1 : 0;
+            let end = Math.min(currentPage * entries, totalEntries);
+            info.textContent = `Showing ${start} to ${end} of ${totalEntries} entries`;
+            
+            updatePagination(totalPages);
+        }
+
+        function updatePagination(totalPages) {
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === currentPage ? ' active' : '');
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = i;
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentPage = i;
+                    updateTable();
+                });
+                li.appendChild(a);
+                paginationContainer.appendChild(li);
+            }
+        }
+
+        entriesSelect.addEventListener('change', function() {
+            currentPage = 1;
+            updateTable();
+        });
+
+        updateTable();
+    });
 
         function confirmDelete(id) {
         Swal.fire({

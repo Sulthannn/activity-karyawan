@@ -18,6 +18,10 @@ function is_admin() {
     return $_SESSION['role'] === 'Admin';
 }
 
+function is_user() {
+    return $_SESSION['role'] === 'User';
+}
+
 // Delete user
 if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'delete') {
     $id = intval($_GET['id']);
@@ -93,7 +97,7 @@ if (isset($_GET['id']) && isset($_GET['action']) && $_GET['action'] == 'change_s
     $stmt->close();
 }
 
-$query  = "SELECT * FROM users";
+$query  = "SELECT * FROM users ORDER BY id DESC";
 $result = mysqli_query($koneksi, $query);
 ?>
 
@@ -113,13 +117,14 @@ $result = mysqli_query($koneksi, $query);
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/lightbox2/2.11.3/css/lightbox.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/vendors/css/vendors.min.css">
     <!-- END: Vendor CSS-->
 
     <!-- Favicons -->
-    <link href="../../assets/img/logo.png" rel="icon">
+    <link href="img/logo.png" rel="icon">
 
     <!-- BEGIN: Theme CSS-->
     <link rel="stylesheet" type="text/css" href="../../../app-assets/css/bootstrap.css">
@@ -140,14 +145,13 @@ $result = mysqli_query($koneksi, $query);
             padding: 12px 24px;
             text-decoration: none;
         }
-        .image-preview {
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            max-width: 100%;
-            height: auto;
+        .gallery-icon {
+            color: #2A629A; 
+            font-size: 24px; 
+            transition: color 0.3s ease; 
         }
-        .image-preview:hover {
-            box-shadow: 0 0 5px rgba(0, 0, 0, 0.3);
+        .gallery-icon:hover {
+            color: #1A4F6A; 
         }
         .card-header {
             display: flex;
@@ -176,14 +180,16 @@ $result = mysqli_query($koneksi, $query);
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                        <?php if (is_user()): ?>
                         <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <?php endif; ?>
                         <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
             </ul>
         </div>
     </nav>
-    <!-- END: Header-->
+    <!-- END: Header-->
 
     <!-- BEGIN: Main Menu-->
     <div class="main-menu menu-fixed menu-dark menu-accordion menu-shadow" data-scroll-to-active="true">
@@ -264,16 +270,16 @@ $result = mysqli_query($koneksi, $query);
                                 <table class="table table-hover-animation" style="min-width: 1500px;">
                                     <thead>
                                         <tr style="text-align: center;">
-                                            <th>No.</th>
-                                            <th>Image</th>
-                                            <th>NUP</th>
-                                            <th>Nama</th>
-                                            <th>Divisi</th>
-                                            <th>Username</th>
-                                            <th>Role</th>
-                                            <th>Status</th>
+                                            <th style="min-width: 50px;">No.</th>
+                                            <th style="min-width: 100px;">Image</th>
+                                            <th style="min-width: 200px;">NUP</th>
+                                            <th style="min-width: 350px;">Name</th>
+                                            <th style="min-width: 150px;">Divisi</th>
+                                            <th style="min-width: 200px;">Username</th>
+                                            <th style="min-width: 200px;">Role</th>
+                                            <th style="min-width: 50px;">Status</th>
                                             <?php if (is_superadmin()): ?>
-                                            <th>Action</th>
+                                            <th style="min-width: 350px;">Action</th>
                                             <?php endif; ?>
                                         </tr>
                                     </thead>
@@ -286,8 +292,8 @@ $result = mysqli_query($koneksi, $query);
                                                 <tr>
                                                     <td><?php echo $i; ?></td>
                                                     <td>
-                                                        <a href="img/<?php echo $row['image']; ?>" data-lightbox="profile-image">
-                                                            <img src="img/<?php echo $row['image']; ?>" class="image-preview" alt="User Image" width="125" />
+                                                        <a href="img/<?php echo $row['image']; ?>" data-lightbox="profile-image" class="gallery-icon">
+                                                            <i class="fas fa-images" style="font-size: 18px;"></i>
                                                         </a>
                                                     </td>
                                                     <td><?php echo $row['nup']; ?></td>
@@ -322,8 +328,17 @@ $result = mysqli_query($koneksi, $query);
                                         }
                                         ?>
                                     </tbody>
+
                                 </table>
                             </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-2">
+                                    <div id="table-info" class="text-left"></div>
+                                    <div class="pagination-container">
+                                        <ul class="pagination">
+                                            <!-- Pagination buttons will be dynamically generated here -->
+                                        </ul>
+                                    </div>
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -487,31 +502,58 @@ $result = mysqli_query($koneksi, $query);
         const entriesSelect = document.getElementById('entriesSelect');
         const table = document.querySelector('.table-hover-animation');
         const rows = table.getElementsByTagName('tr');
-        const info = document.createElement('div');
-        info.style.marginTop = '15px';
-        info.style.marginLeft = '20px';
-        table.parentNode.insertBefore(info, table.nextSibling);
+        const info = document.getElementById('table-info');
+        const paginationContainer = document.querySelector('.pagination-container .pagination');
 
-    function updateTable() {
+        let currentPage = 1;
+        const rowsPerPage = parseInt(entriesSelect.value);
+
+        function updateTable() {
             const entries = parseInt(entriesSelect.value);
             let count = 0;
             let totalEntries = rows.length - 1;
+            const totalPages = Math.ceil(totalEntries / entries);
 
             for (let i = 1; i < rows.length; i++) {
-                if (count < entries) {
+                if (i > (currentPage - 1) * entries && i <= currentPage * entries) {
                     rows[i].style.display = '';
                     count++;
                 } else {
                     rows[i].style.display = 'none';
                 }
             }
-
-            let start = totalEntries > 0 ? 1 : 0;
-            let end = Math.min(entries, totalEntries);
+            
+            let start = totalEntries > 0 ? (currentPage - 1) * entries + 1 : 0;
+            let end = Math.min(currentPage * entries, totalEntries);
             info.textContent = `Showing ${start} to ${end} of ${totalEntries} entries`;
+            
+            updatePagination(totalPages);
         }
 
-        entriesSelect.addEventListener('change', updateTable);
+        function updatePagination(totalPages) {
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === currentPage ? ' active' : '');
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = i;
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentPage = i;
+                    updateTable();
+                });
+                li.appendChild(a);
+                paginationContainer.appendChild(li);
+            }
+        }
+
+        entriesSelect.addEventListener('change', function() {
+            currentPage = 1;
+            updateTable();
+        });
 
         // Initial call to set the table based on the default value
         updateTable();

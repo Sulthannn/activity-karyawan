@@ -11,6 +11,18 @@
 
     include("koneksi.php");
 
+    function is_superadmin() {
+        return $_SESSION['role'] === 'Super-Admin';
+    }
+    
+    function is_admin() {
+        return $_SESSION['role'] === 'Admin';
+    }
+    
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
+    
     $id    = $_GET['id'];
     $query = "
         SELECT p.id, p.tanggal, p.deskripsi, p.time_upload_activity_planning, p.gambar,
@@ -21,7 +33,7 @@
     ";
 
     $result = mysqli_query($koneksi, $query);
-    $row = mysqli_fetch_assoc($result);
+    $row    = mysqli_fetch_assoc($result);
 
     $existing_time_upload_activity_planning = $row['time_upload_activity_planning'];
 
@@ -67,6 +79,7 @@
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>BKI - Edit Data</title>
+    <link href="img/logo.png" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -117,7 +130,9 @@
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <?php if (is_user()): ?>
                         <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                    <?php endif; ?>
                         <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -153,10 +168,12 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    </li>
+                    <?php if (is_superadmin() || is_admin()): ?>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                        </li><br>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>

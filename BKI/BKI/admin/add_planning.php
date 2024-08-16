@@ -11,6 +11,18 @@
 
     require 'koneksi.php';
 
+    function is_superadmin() {
+        return $_SESSION['role'] === 'Super-Admin';
+    }
+    
+    function is_admin() {
+        return $_SESSION['role'] === 'Admin';
+    }
+    
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
+
     $result = mysqli_query($koneksi, "SELECT id, nup, nama, divisi FROM users WHERE status = 'Active'");
 
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
@@ -88,6 +100,7 @@
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>BKI - Planning</title>
+    <link href="img/logo.png" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <link href="https://cdnjs.cloudflare.com/ajax/libs/select2/4.0.13/css/select2.min.css" rel="stylesheet" />
@@ -156,7 +169,9 @@
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
-                        <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <?php if (is_user()): ?>
+                            <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                        <?php endif; ?>
                         <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -192,10 +207,12 @@
                             </li>
                         </ul>
                     </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
-                    </li><br>
-                    <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
-                    </li>
+                    <?php if (is_superadmin() || is_admin()): ?>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="role.php"><i data-feather="user-plus"></i><span class="menu-title text-truncate" data-i18n="Role ">Role </span></a>
+                        </li><br>
+                        <li class="nav-item"><a class="d-flex align-items-center" href="feedback.php"><i data-feather="mail"></i><span class="menu-title text-truncate" data-i18n="Feedback ">Feedback </span></a>
+                        </li>
+                    <?php endif; ?>
                 </ul>
             </div>
         </div>
@@ -313,7 +330,7 @@
 
         document.addEventListener('DOMContentLoaded', function() {
             var now = new Date();
-            var hours = now.getHours().toString().padStart(2, '0');
+            var hours   = now.getHours().toString().padStart(2, '0');
             var minutes = now.getMinutes().toString().padStart(2, '0');
             var seconds = now.getSeconds().toString().padStart(2, '0');
             var timeStamp = now.toISOString().split('T')[0] + ' ' + hours + ':' + minutes + ':' + seconds;
@@ -331,7 +348,7 @@
 
             // A-Z
             function sortSelectOptions() {
-                var $select = $('#user_id');
+                var $select  = $('#user_id');
                 var $options = $select.find('option');
 
                 // Urutkan opsi berdasarkan teks

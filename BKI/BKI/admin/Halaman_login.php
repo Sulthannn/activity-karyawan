@@ -1,11 +1,11 @@
 <?php
-session_start();
-if (isset($_SESSION['username'])) {
-    header("Location: dashboard.php");
-    exit;
-}
+    session_start();
+    if (isset($_SESSION['username'])) {
+        header("Location: dashboard.php");
+        exit;
+    }
 
-$error = isset($_GET['error']) ? $_GET['error'] : '';
+    $error = isset($_GET['error']) ? $_GET['error'] : '';
 ?>
 
 <!DOCTYPE html>
@@ -21,6 +21,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : '';
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>Login - BKI Activity</title>
+    <link href="img/logo.png" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -72,7 +73,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : '';
                         <div class="card mb-0">
                             <div class="card-body">
                                 <a href="#" class="brand-logo">
-                                    <img src="img/logo_BKI.png" width="250px" alt="" style="margin-top: 5px; margin-bottom: 20px;">
+                                    <img src="img/logo.png" width="250px" alt="" style="margin-top: 5px; margin-bottom: 20px;">
                                 </a>
                                 <?php if ($error === 'inactive'): ?>
                                     <div class="alert alert-danger">

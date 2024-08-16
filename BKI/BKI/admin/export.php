@@ -8,30 +8,28 @@
     require 'koneksi.php';
     require '../../../vendor/autoload.php';
 
-    if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        $export_date = htmlspecialchars($_POST['export_date']);
-        $username = $_SESSION['username'];
+    $username = $_SESSION['username'];
 
-        $query = "SELECT nama FROM users WHERE username = '$username'";
-        $result = mysqli_query($koneksi, $query);
-        $row = mysqli_fetch_assoc($result);
+    $query  = "SELECT nama FROM users WHERE username = '$username'";
+    $result = mysqli_query($koneksi, $query);
+    $row    = mysqli_fetch_assoc($result);
 
-        $filename = "planning_" . "$export_date.pdf";
+    $filename = "planning_data.pdf";
 
-        $pdf = new TCPDF();
-        $pdf->SetCreator(PDF_CREATOR);
-        $pdf->SetAuthor('BKI');
-        $pdf->SetTitle('Planning Export');
-        $pdf->SetSubject('Export Planning Data');
-        $pdf->SetKeywords('TCPDF, PDF, export, planning');
+    $pdf = new TCPDF();
+    $pdf ->SetCreator(PDF_CREATOR);
+    $pdf ->SetAuthor('BKI');
+    $pdf ->SetTitle('Planning Export');
+    $pdf ->SetSubject('Export Planning Data');
+    $pdf ->SetKeywords('TCPDF, PDF, export, planning');
 
-        $pdf->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
-        $pdf->AddPage('L');
+    $pdf ->SetMargins(PDF_MARGIN_LEFT, PDF_MARGIN_TOP, PDF_MARGIN_RIGHT);
+    $pdf ->AddPage('L');
 
-        $html = "
+    $html = "
         <table width=\"100%\">
             <tr>
-                <td style=\"text-align: left;\">$export_date</td>
+                <td style=\"text-align: left;\"></td>
                 <td style=\"text-align: center;\"><h2>Planning Export</h2></td>
                 <td style=\"text-align: right;\"></td>
             </tr>
@@ -59,7 +57,7 @@
             u.nup, u.nama, u.divisi
         FROM planning p
         JOIN users u ON p.user_id = u.id
-        WHERE p.tanggal = '$export_date' AND u.status = 'Active'
+        WHERE u.status = 'Active'
         ORDER BY p.status DESC, p.time_upload_activity_planning ASC
     ";
 
@@ -100,5 +98,4 @@
     $pdf->Output($filename, 'D');
 
     exit;
-}
 ?>
