@@ -82,30 +82,35 @@ function tambah_planning($data) {
     $status = $data['status'];
     $history_update = 0;
 
-     // Jika gambar ada, set status dan increment history_update
-     if (!empty($gambar)) {
+    // Jika gambar ada, set status dan increment history_update
+    if (!empty($gambar)) {
         $status = 'Completed';
         $history_update = 1; // Set history_update to 1 when an image is uploaded
     } else {
         $status = 'On-progress';
     }
     
+    // Buat query SQL untuk menambahkan data ke dalam tabel
     $query = "INSERT INTO planning (tanggal, user_id, deskripsi, gambar, time_upload_activity_planning, status, history_update)
                 VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = $koneksi->prepare($query);
     
+    // Cek apakah prepare statement berhasil dibuat
     if (!$stmt) {
         die('Prepare failed: ' . $koneksi->error);
     }
 
+    // Bind parameter ke prepared statement
     $stmt->bind_param("sissssi", $tanggal, $user_id, $deskripsi, $gambar, $time_upload_activity_planning, $status, $history_update);
     
+    // Eksekusi query dan cek hasilnya
     if ($stmt->execute()) {
         return $stmt->affected_rows;
     } else {
         die('Execute failed: ' . $stmt->error);
     }
 }
+
 
 function hapus_feedback($id) {
     global $koneksi;
@@ -257,28 +262,29 @@ function update_planning($data) {
     $time_upload_activity_planning = isset($data['time_upload_activity_planning']) ? htmlspecialchars($data['time_upload_activity_planning']) : '';
     $deskripsi = htmlspecialchars($data['deskripsi']);
     $status = isset($data['status']) ? htmlspecialchars($data['status']) : '';
-    $history_update = isset($data['history_update']) ? htmlspecialchars($data['history_update']) : 0;
-
+    
+    $role = $_SESSION['role'];
+    
     $stmt = $koneksi->prepare("SELECT gambar, deskripsi, history_update, time_upload_activity_planning, time_upload_avident FROM planning WHERE id=?");
     $stmt->bind_param("i", $id);
     $stmt->execute();
     $result = $stmt->get_result();
     $existing_data = $result->fetch_assoc();
+    
     $existing_time_upload_activity_planning = $existing_data['time_upload_activity_planning'];
     $existing_time_upload_avident = $existing_data['time_upload_avident'];
     $existing_gambar = $existing_data['gambar'];
     $existing_deskripsi = $existing_data['deskripsi'];
     $existing_history_update = $existing_data['history_update'];
 
-    // Compare new description with existing description
     if ($deskripsi != $existing_deskripsi) {
-        $history_update = $existing_history_update + 1; // Increment history_update if the description is changed
+        $history_update = ($role === 'User') ? $existing_history_update + 1 : $existing_history_update;
     } else {
         $history_update = $existing_history_update;
     }
 
     $time_upload_activity_planning = !empty($time_upload_activity_planning) ? $time_upload_activity_planning : $existing_time_upload_activity_planning;
-    $time_upload_avident = isset($data['time_upload_avident']) ? htmlspecialchars($data['time_upload_avident']) : $existing_time_upload_avident;
+    $time_upload_avident = ($role === 'Super-Admin') ? $existing_time_upload_avident : (isset($data['time_upload_avident']) ? htmlspecialchars($data['time_upload_avident']) : $existing_time_upload_avident);
 
     $stmt = $koneksi->prepare("UPDATE planning SET tanggal=?, user_id=?, gambar=?, time_upload_avident=?, time_upload_activity_planning=?, deskripsi=?, status=?, history_update=? WHERE id=?");
     $stmt->bind_param("sissssssi", $tanggal, $user_id, $gambar, $time_upload_avident, $time_upload_activity_planning, $deskripsi, $status, $history_update, $id);

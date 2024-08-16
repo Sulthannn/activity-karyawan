@@ -19,6 +19,10 @@
         return $_SESSION['role'] === 'Admin';
     }
 
+    function is_user() {
+        return $_SESSION['role'] === 'User';
+    }
+
     $query = "
         SELECT id, name, email, subject, message 
         FROM feedback
@@ -29,7 +33,7 @@
 
     function mask_email($email) {
         $email_parts = explode("@", $email);
-        $name_part = $email_parts[0];
+        $name_part   = $email_parts[0];
         $domain_part = $email_parts[1];
         
         if (strlen($name_part) > 2) {
@@ -89,6 +93,7 @@
     <meta name="keywords" content="admin template, Vuexy admin template, dashboard template, flat admin template, responsive admin template, web app">
     <meta name="author" content="PIXINVENT">
     <title>BKI - Feedback</title>
+    <link href="img/logo.png" rel="icon">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,400;1,500;1,600" rel="stylesheet">
 
     <!-- BEGIN: Vendor CSS-->
@@ -120,6 +125,14 @@
             padding: 12px 24px;
             text-decoration: none;
         }
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        #searchInput:hover {
+            border: 1px solid #003285 !important;
+        }
     </style>
 </head>
 
@@ -138,7 +151,9 @@
                         <div class="user-nav d-sm-flex d-none"><span class="user-name fw-bolder"><?php echo $nama; ?></span><span class="user-status"><?php echo $role; ?></span></div><span class="avatar"><img class="round" src="img/<?php echo $image; ?>" alt="" height="40" width="40"><span class="avatar-status-online"></span></span>
                     </a>
                     <div class="dropdown-menu dropdown-menu-end" aria-labelledby="dropdown-user"><a class="dropdown-item" href="profile.php"><i class="me-50" data-feather="user"></i> Profile</a>
+                    <?php if (is_user()): ?>
                         <a class="dropdown-item" href="#" onclick="confirmBreak(); return false;"><i class="me-50" data-feather="battery-charging"></i> Break</a>
+                    <?php endif; ?>
                         <a class="dropdown-item" href="#" onclick="confirmLogout(); return false;"><i class="me-50" data-feather="power"></i> Logout</a>
                     </div>
                 </li>
@@ -201,9 +216,21 @@
                 <div class="row" id="table-hover-animation">
                     <div class="col-12">
                         <div class="card">
-                            <!-- <div class="card-header">
-                                <h4 class="card-title">Feedback</h4>
-                            </div> -->
+                            <div class="card-header d-flex justify-content-between">
+                                <div>
+                                    <label for="entriesSelect">Show</label>
+                                    <select id="entriesSelect" class="form-select form-select-sm" style="width: auto; display: inline-block;">
+                                        <option value="10">10</option>
+                                        <option value="25">25</option>
+                                        <option value="50">50</option>
+                                        <option value="100">100</option>
+                                    </select>
+                                    <label for="entriesSelect" class="ms-2">entries</label>
+                                </div>
+                                <div>
+                                    <input type="text" id="searchInput" placeholder="Search..." class="form-control search-input" style="width: 220px;" onkeyup="searchTable()">
+                                </div>
+                            </div>
                             <div class="table-responsive"> <!-- style="min-width: 1000px;" -->
                                 <table class="table table-hover-animation">
                                     <thead>
@@ -218,7 +245,7 @@
                                             <?php endif; ?>
                                         </tr>
                                     </thead>
-                                    <tbody style="text-align: center;">
+                                    <tbody id="tableBody" style="text-align: center;">
                                     <?php 
                                         $i = 1;
                                         if(mysqli_num_rows($result) > 0){
@@ -245,6 +272,13 @@
                                     </tbody>
                                 </table>
                             </div>
+                                <div class="d-flex justify-content-between align-items-center mt-2 px-2">
+                                    <div id="table-info" class="text-left"></div>
+                                    <div class="pagination-container">
+                                        <ul class="pagination">
+                                        </ul>
+                                    </div>
+                                </div>
                         </div>
                     </div>
                 </div>
@@ -284,6 +318,88 @@
                 });
             }
         })
+
+        function searchTable() {
+            var input, filter, table, tr, td, i, j, txtValue;
+            input = document.getElementById("searchInput");
+            filter = input.value.toLowerCase();
+            table = document.querySelector(".table-hover-animation");
+            tr = table.getElementsByTagName("tr");
+
+            for (i = 1; i < tr.length; i++) { 
+                tr[i].style.display = "none";
+                td = tr[i].getElementsByTagName("td");
+                for (j = 0; j < td.length; j++) {
+                    if (td[j]) {
+                        txtValue = td[j].textContent || td[j].innerText;
+                        if (txtValue.toLowerCase().indexOf(filter) > -1) {
+                            tr[i].style.display = "";
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+        const entriesSelect = document.getElementById('entriesSelect');
+        const table = document.querySelector('.table-hover-animation');
+        const rows = table.getElementsByTagName('tr');
+        const info = document.getElementById('table-info');
+        const paginationContainer = document.querySelector('.pagination-container .pagination');
+
+        let currentPage = 1;
+        const rowsPerPage = parseInt(entriesSelect.value);
+
+        function updateTable() {
+            const entries = parseInt(entriesSelect.value);
+            let count = 0;
+            let totalEntries = rows.length - 1;
+            const totalPages = Math.ceil(totalEntries / entries);
+
+            for (let i = 1; i < rows.length; i++) {
+                if (i > (currentPage - 1) * entries && i <= currentPage * entries) {
+                    rows[i].style.display = '';
+                    count++;
+                } else {
+                    rows[i].style.display = 'none';
+                }
+            }
+            
+            let start = totalEntries > 0 ? (currentPage - 1) * entries + 1 : 0;
+            let end = Math.min(currentPage * entries, totalEntries);
+            info.textContent = `Showing ${start} to ${end} of ${totalEntries} entries`;
+            
+            updatePagination(totalPages);
+        }
+
+        function updatePagination(totalPages) {
+            paginationContainer.innerHTML = '';
+
+            for (let i = 1; i <= totalPages; i++) {
+                const li = document.createElement('li');
+                li.className = 'page-item' + (i === currentPage ? ' active' : '');
+                const a = document.createElement('a');
+                a.className = 'page-link';
+                a.href = '#';
+                a.textContent = i;
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    currentPage = i;
+                    updateTable();
+                });
+                li.appendChild(a);
+                paginationContainer.appendChild(li);
+            }
+        }
+
+        entriesSelect.addEventListener('change', function() {
+            currentPage = 1;
+            updateTable();
+        });
+
+        updateTable();
+    });
 
         function confirmDelete(id) {
         Swal.fire({
